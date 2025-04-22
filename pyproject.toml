@@ -1,0 +1,37 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "pgs_aseba_project"
+version = "0.0.1"
+description = "This study investigates sex differences in the association between an autism polygenic score and an autism subscale of the ASEBA questionnaires. These questionnaires were taken in a general population. Rater effects are investigated as the same questionnaire was taken via self-, parent- and teacher-reports (YSR, TRF and CBCL respectively)."
+authors = [
+  { name = "Thomas Sollie, Vrije Universiteit Amsterdam" },
+]
+license = { file = "LICENSE" }
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License"
+]
+dependencies = [
+    "pip",
+    "python-dotenv",
+    "ruff",
+]
+requires-python = "~=3.13.0"
+
+
+[tool.ruff]
+line-length = 99
+src = ["pgs_aseba_project"]
+include = ["pyproject.toml", "pgs_aseba_project/**/*.py"]
+
+[tool.ruff.lint]
+extend-select = ["I"]  # Add import sorting
+
+[tool.ruff.lint.isort]
+known-first-party = ["pgs_aseba_project"]
+force-sort-within-sections = true
+
