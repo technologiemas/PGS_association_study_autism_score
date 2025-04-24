@@ -1,7 +1,8 @@
 Version: 1.0
+ProjectId: 88807253-252f-448c-b933-73a76c134c0f
 
 RestoreWorkspace: Default
-SaveWorkspace: Default
+SaveWorkspace: Yes
 AlwaysSaveHistory: Default
 
 EnableCodeIndexing: Yes
@@ -11,3 +12,5 @@ Encoding: UTF-8
 
 RnwWeave: Sweave
 LaTeX: pdfLaTeX
+
+BuildType: Makefile

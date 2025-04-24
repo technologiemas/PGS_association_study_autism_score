@@ -5,6 +5,7 @@
 PROJECT_NAME = autism_pgs_aseba
 PYTHON_VERSION = 3.13
 PYTHON_INTERPRETER = python
+R_VERSION = 4.5.0
 
 #################################################################################
 # COMMANDS                                                                      #
@@ -40,8 +41,6 @@ format:
 
 
 
-
-
 ## Set up Python interpreter environment
 .PHONY: create_environment
 create_environment:
@@ -50,8 +49,9 @@ create_environment:
 	@echo ">>> Windows: .\\\\.venv\\\\Scripts\\\\activate"
 	@echo ">>> Unix/macOS: source ./.venv/bin/activate"
 
-
-
+## Set up R interpreter environment
+env: renv.lock
+	Rscript -e "renv::restore()"
 
 #################################################################################
 # PROJECT RULES                                                                 #

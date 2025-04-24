@@ -6,6 +6,27 @@
 
 This study investigates sex differences in the association between an autism polygenic score and an autism subscale of the ASEBA questionnaires. These questionnaires were taken in a general population. Rater effects are investigated as the same questionnaire was taken via self-, parent- and teacher-reports (YSR, TRF and CBCL respectively).
 
+# Recreate analysis
+
+In order to recreate the analysis, we need to install the necessary dependencies for Python and R.
+
+The required dependencies are in pyproject.toml and renv.lock. The necessary installments are as follows:
+
+- [`make`](https://www.gnu.org/software/make/)
+- [`R`](https://cran.r-project.org/) (v4.5.0)
+- [`Python`](https://www.python.org/) (v3.13)
+- [`renv`](https://rstudio.github.io/renv/)
+- [`uv`](https://github.com/astral-sh/uv)
+
+Next to recreate the project, in a terminal in the project root type:
+
+```
+make
+```
+This will create a virtual environment and install the required Python dependencies. It will also create an R environment and install the required R dependencies.
+
+To recreate the analyses, run scripts/main.R.
+
 ## Project Organization
 
 ```
@@ -49,13 +70,12 @@ This study investigates sex differences in the association between an autism pol
     │
     ├── features.py             <- Code to create features for modeling
     │
-    ├── modeling                
+    ├── modeling              
     │   ├── __init__.py 
-    │   ├── predict.py          <- Code to run model inference with trained models          
+    │   ├── predict.py          <- Code to run model inference with trained models        
     │   └── train.py            <- Code to train models
     │
     └── plots.py                <- Code to create visualizations
 ```
 
---------
-
+---

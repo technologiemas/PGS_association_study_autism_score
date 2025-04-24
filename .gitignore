@@ -1,3 +1,13 @@
+# R stuff
+.Rhistory
+.Rdata
+.Rproj.user
+.idea
+.Rapp.history
+.vscode
+.DS_Store
+*.Rdata
+
 # Data
 /data/
 
@@ -184,3 +194,4 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+.Rproj.user
