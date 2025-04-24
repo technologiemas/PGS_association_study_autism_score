@@ -5,8 +5,7 @@
 .idea
 .Rapp.history
 .vscode
-.DS_Store
-*.Rdata
+*.Rproj
 
 # Data
 /data/
