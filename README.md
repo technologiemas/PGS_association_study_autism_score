@@ -6,7 +6,11 @@
 
 This study investigates sex differences in the association between an autism polygenic score and an autism subscale of the ASEBA questionnaires. These questionnaires were taken in a general population. Rater effects are investigated as the same questionnaire was taken via self-, parent- and teacher-reports (YSR, TRF and CBCL respectively).
 
+
+```
 # Recreate analysis
+
+The data was requested from NTR following the data_request_1.json file. The data was downloaded from the NTR website and is stored in the `data/raw` folder. The data is not included in this repository due to its size and privacy concerns. The data can be requested from NTR by following the instructions on their website: https://ntr-data-request.psy.vu.nl/.
 
 In order to recreate the analysis, we need to install the necessary dependencies for Python and R.
 
@@ -29,19 +33,17 @@ To recreate the analyses, run scripts/main.R.
 
 ## Project Organization
 
+The project is structured according to the [Cookiecutter Data Science](https://drivendata.github.io/cookiecutter-data-science/) template. This template provides a logical, reasonably standardized, but flexible project structure for doing and sharing data science work.
+
 ```
 ├── LICENSE            <- Open-source license if one is chosen
 ├── Makefile           <- Makefile with convenience commands like `make data` or `make train`
 ├── README.md          <- The top-level README for developers using this project.
 ├── data
-│   ├── external       <- Data from third party sources.
-│   ├── interim        <- Intermediate data that has been transformed.
 │   ├── processed      <- The final, canonical data sets for modeling.
 │   └── raw            <- The original, immutable data dump.
 │
 ├── docs               <- A default mkdocs project; see www.mkdocs.org for details
-│
-├── models             <- Trained and serialized models, model predictions, or model summaries
 │
 ├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
 │                         the creator's initials, and a short `-` delimited description, e.g.

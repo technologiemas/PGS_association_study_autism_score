@@ -6,6 +6,8 @@
 .Rapp.history
 .vscode
 *.Rproj
+.Rprofile
+renv
 
 # Data
 /data/

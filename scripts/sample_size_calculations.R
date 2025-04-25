@@ -20,3 +20,4 @@ female_n_t12 = length(data$FISnumber[data$sex == FEMALE & !is.na(data$q1t12)])
 male_n_t12 = length(data$FISnumber[data$sex == MALE & !is.na(data$q1t12)])
 female_n_yrs14 = length(data$FISnumber[data$sex == FEMALE & !is.na(data$q1ysr14)])
 male_n_yrs14 = length(data$FISnumber[data$sex == MALE & !is.na(data$q1ysr14)])
+
