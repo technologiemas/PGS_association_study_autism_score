@@ -56,12 +56,15 @@ data = data %>% inner_join(genotype_data, by = "FISNumber")
 sum_autism = function(data, items) {
   # take the variable name as a string
   name = paste0(as.character(substitute(items)), "_aut_sum")
+
+  items = head(items, 10) # remove the last two items in the list
   
   # create a new column with col name as name that sums the autism scale items
-  data[[name]] = rowSums(data %>% select(contains(items)))
+  data[[name]] = rowSums(data %>% select(contains(items)), na.rm=TRUE)
   return(data)
 }
 
+# without the final 2 items in the collection of items
 data = sum_autism(data, m12)
 data = sum_autism(data, v12)
 data = sum_autism(data, t12)
@@ -116,3 +119,5 @@ saveRDS(data_mother, "data/processed/02_data_mother_full.rds")
 saveRDS(data_father, "data/processed/02_data_father_full.rds")
 saveRDS(data_teacher, "data/processed/02_data_teacher_full.rds")
 saveRDS(data_ysr, "data/processed/02_data_ysr_full.rds")
+
+
