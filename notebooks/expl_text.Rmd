@@ -1,0 +1,80 @@
+In this notebook histograms are plotted to investigate various distributions of the data and their transformations
+
+Loading the data:
+```{R}
+install.packages("ggplot2")
+install.packages("moments")
+library(ggplot2)
+library(moments)
+getwd()
+data = readRDS("data/processed/03_data_mother_clean.rds")
+```
+
+# Phenotypical data
+```{R}
+library(ggplot2)
+
+# plot the distribution of the variable m12_aut_sum
+ggplot(data, aes(x = m12_aut_sum)) +
+  geom_histogram(binwidth = 1) +
+  labs(title = "Distribution of m12_aut_sum", x = "m12_aut_sum", y = "Count") +
+  theme_minimal()
+
+# scale the variable m12_aut_sum
+data$m12_aut_sum_scaled = scale(data$m12_aut_sum)
+
+# plot the distribution of the scaled variable m12_aut_sum_scaled
+ggplot(data, aes(x = m12_aut_sum_scaled)) +
+  geom_histogram(binwidth = 0.1) +
+  labs(title = "Distribution of m12_aut_sum_scaled", x = "m12_aut_sum_scaled", y = "Count") +
+  theme_minimal()
+
+# take log of the variable m12_aut_sum to remove skew
+data$m12_aut_sum_log = log(data$m12_aut_sum)
+
+# plot the distribution of the log transformed variable m12_aut_sum_log
+ggplot(data, aes(x = m12_aut_sum_log)) +
+  geom_histogram(binwidth = 0.1) +
+  labs(title = "Distribution of m12_aut_sum_log", x = "m12_aut_sum_log", y = "Count") +
+  theme_minimal()
+
+# take 1/x of the variable m12_aut_sum to remove skew
+data$m12_aut_sum_inv = 1 / data$m12_aut_sum
+
+# plot the distribution of the inverse transformed variable m12_aut_sum_inv
+ggplot(data, aes(x = m12_aut_sum_inv)) +
+  geom_histogram(binwidth = 0.1) +
+  labs(title = "Distribution of m12_aut_sum_inv", x = "m12_aut_sum_inv", y = "Count") +
+  theme_minimal()
+
+# take the qnorm and pexp
+data$m12_aut_sum_qexp = pexp(data$m12_aut_sum)
+data$m12_aut_sum_qnorm = qnorm(data$m12_aut_sum_qexp)
+
+# plot the distribution of the qnorm transformed variable m12_aut_sum_qnorm
+ggplot(data, aes(x = m12_aut_sum_qnorm)) +
+  geom_histogram(binwidth = 0.1) +
+  labs(title = "Distribution of m12_aut_sum_qnorm", x = "m12_aut_sum_qnorm", y = "Count") +
+  theme_minimal()
+```
+
+
+# Polygenic scores
+
+```{R}
+# plot the distribution of the variable P_0_01_SCORE_AutismSpectrumDisorder_MRG18_LDp1
+ggplot(data, aes(x = P_0_01_SCORE_AutismSpectrumDisorder_MRG18_LDp1)) +
+  geom_histogram() +
+  labs(title = "Distribution of P_0_01_SCORE_AutismSpectrumDisorder_MRG18_LDp1", x = "P_0_01_SCORE_AutismSpectrumDisorder_MRG18_LDp1", y = "Count") +
+  theme_minimal()
+```
+
+
+# Check skewness for all variables
+```{R}
+skewness(data$m12_aut_sum, na.rm = TRUE)
+skewness(data$m12_aut_sum_scaled, na.rm = TRUE)
+skewness(data$m12_aut_sum_log, na.rm = TRUE)
+skewness(data$m12_aut_sum_inv, na.rm = TRUE)
+skewness(data$m12_aut_sum_qnorm, na.rm = TRUE)
+```
