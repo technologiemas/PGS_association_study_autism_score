@@ -1,71 +1,18 @@
 library(geepack)
 library(dplyr)
+library(tidyr)
 
-data_father = readRDS("data/processed/03_data_father_clean.rds")
-data_mother = readRDS("data/processed/03_data_mother_clean.rds")
-data_teacher = readRDS("data/processed/03_data_teacher_clean.rds")
-data_self = readRDS("data/processed/03_data_ysr_clean.rds")
-data_all = readRDS("data/processed/02_full_required_dataset_clean.rds")
+data = readRDS("data/processed/02_full_dataset_clean.rds")
+data_long = readRDS("data/processed/02_full_dataset_long.rds")
 
-age_m12 = "agem12"
-age_v12 = "agev12"
-age_t12 = "agetrf12"
-age_ysr14 = "ages14"
 covariates = c("PLATFORM", "PC1_1KG", "PC2_1KG", "PC3_1KG", "PC4_1KG", "PC5_1KG", "PC6_1KG", "PC7_1KG", "PC8_1KG", "PC9_1KG", "PC10_1KG")
 
-# --- phenotype descriptives and comparisons ---
-# descriptives
-# mother
-sd(data_mother$m12_aut_sum, na.rm = TRUE)
-mean(data_mother$m12_aut_sum, na.rm = TRUE)
-# teacher
-sd(data_teacher$t12_aut_sum, na.rm = TRUE)
-mean(data_teacher$t12_aut_sum, na.rm = TRUE)
-# self-report
-sd(data_self$ysr14_aut_sum, na.rm = TRUE)
-mean(data_self$ysr14_aut_sum, na.rm = TRUE)
-
-# model 1: male vs female comparison of autism score
-ggplot(data_mother, aes(x = sex, y = m12_aut_sum)) +
-  geom_boxplot()
-
-# descriptives and statistical test
-sd(data_mother$m12_aut_sum[data_mother$sex == "MALE"], na.rm = TRUE)
-sd(data_mother$m12_aut_sum[data_mother$sex == "FEMALE"], na.rm = TRUE)
-wilcox.test(data_mother$m12_aut_sum[data_mother$sex == "MALE"], 
-            data_mother$m12_aut_sum[data_mother$sex == "FEMALE"])
-
-# self-report
-sd(data_self$ysr14_aut_sum[data_self$sex == "MALE"], na.rm = TRUE)
-sd(data_self$ysr14_aut_sum[data_self$sex == "FEMALE"], na.rm = TRUE)
-wilcox.test(data_self$ysr14_aut_sum[data_self$sex == "MALE"], 
-            data_self$ysr14_aut_sum[data_self$sex == "FEMALE"])
-
-# model 2: do different raters rate the same kids differently?
-# overlap of individuals rated by different raters
-overlap_mt = intersect(data_mother$FISNumber, data_teacher$FISNumber)
-overlap_ms = intersect(data_mother$FISNumber, data_self$FISNumber)
-overlap_mv = intersect(data_mother$FISNumber, data_father$FISNumber)
-overlap_all = intersect(overlap_mt, overlap_ms)
-overlap_all = intersect(overlap_all, overlap_mv)
-
-data_overlap = data_all %>%
-  filter(FISNumber %in% overlap_all)
-  filter(in_YS_12M & in_YS_DHBQ14 & in_YS_T12)
-
-# anova
-anova(lm(score ~ rater, data = overlap_data))
-
+# data_long = data_long %>% drop_na(autism_score)
 
 # --- GEE models ---
+m1 = autism_score ~ sex * rater_type
 
-# model 1: sex differences in association between polygenic score and autism score
-autism_score ~ sex + PGS + PGS * sex + age + covariates
-# (1 | FamilyNumber) or group_by = "FamilyNumber" 
+glm1 = geeglm(m1, id = FamilyNumber, data = data_long, corstr = "exchangeable")
+summary(glm1)
 
-# model 2: interaction between rater and rated sex on the association between polygenic score and autism score
-autism_score ~ sex + rater_sex + PGS + PGS * sex * rater_sex + age + covariates
-
-# model 3: interaction between rater and rated on autism score
-autism_score ~ rater_sex + rated_sex + age + covariates
-
+colnames(model.matrix((m1), data = data_long))
