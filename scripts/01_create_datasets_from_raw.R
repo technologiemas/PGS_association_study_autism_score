@@ -1,4 +1,5 @@
 rm(list = ls(all = TRUE))
+gc()
 library(haven)
 library(dplyr)
 library(stringr)
@@ -25,11 +26,12 @@ data = data %>% inner_join(genotype_data, by = "FISNumber")
 
 # ---
 # calculate autism scores according to So. et al., 2013
+# set items to NA if they are -1 in the data
+data[data == -1] <- NA
 
-# a function that sums the individual items into an autism scale
+# FUNCTION that sums the individual items into an autism scale
 sum_autism = function(data, items, indicator) {
-  # take the variable name as a string
-name = paste0(str_replace(deparse(substitute(items)), "items_", ""), "_aut_sum")
+  name = paste0(str_replace(deparse(substitute(items)), "items_", ""), "_aut_sum")   # take the variable name as a string
 
   # create a new column with col name as name that sums the autism scale items
   data = data %>%
@@ -43,17 +45,37 @@ name = paste0(str_replace(deparse(substitute(items)), "items_", ""), "_aut_sum")
   return(data)
 }
 
-# without the final 2 items in the collection of items
-data = sum_autism(data, items_m12, "in_YS_12M")
-data = sum_autism(data, items_v12, "in_YS_12V")
-data = sum_autism(data, items_t12, "in_YS_TRF12")
-data = sum_autism(data, items_ysr14, "in_YS_DHBQ14")
+# FUNCTION to set autism sums to NA if more than 2 items are missing
+set_autsum_na <- function(data, items, indicator, sum_col) {
+  threshold <- 2 # number of items that can be missing
+  data %>%
+    mutate(
+      !!sum_col := if_else(
+        .data[[indicator]] == 1 & rowSums(is.na(select(., all_of(items)))) > threshold,
+        NA_real_,
+        .data[[sum_col]]
+      )
+    )
+}
 
-# --- some data cleaning ---
-# set sex to MALE and FEMALE using enumeration. set 1 to male and 2 to female
-data$sex <- factor(as_factor(as.numeric(data$sex)), levels = c(1, 2), labels = c("MALE", "FEMALE"))
-data$genderlkrt12 <- factor(as_factor(as.numeric(data$genderlkrt12)), levels = c(1, 2), labels = c("MALE", "FEMALE"))
+# amount of NA values in the autism scores
+na_counts <- data %>%
+  summarise(
+    m12_aut_sum_na = sum(is.na(m12_aut_sum)),
+    v12_aut_sum_na = sum(is.na(v12_aut_sum)),
+    t12_aut_sum_na = sum(is.na(t12_aut_sum)),
+    ysr14_aut_sum_na = sum(is.na(ysr14_aut_sum))
+  )
 
+# Usage set_autsum_na()
+data <- data %>%
+  set_autsum_na(items_m12, "in_YS_12M", "m12_aut_sum") %>%
+  set_autsum_na(items_v12, "in_YS_12V", "v12_aut_sum") %>%
+  set_autsum_na(items_t12, "in_YS_TRF12", "t12_aut_sum") %>%
+  set_autsum_na(items_ysr14, "in_YS_DHBQ14", "ysr14_aut_sum")
+
+
+# --- some cleaning and saving dataset ---
 # change NA in in_YS_12M, in_YS_12V, in_YS_TRF12, in_YS_DHBQ14 to 0
 data$in_YS_12M[is.na(data$in_YS_12M)] <- 0
 data$in_YS_12V[is.na(data$in_YS_12V)] <- 0
@@ -61,3 +83,6 @@ data$in_YS_TRF12[is.na(data$in_YS_TRF12)] <- 0
 data$in_YS_DHBQ14[is.na(data$in_YS_DHBQ14)] <- 0
 
 saveRDS(data, "data/processed/01_full_dataset.rds")
+
+
+

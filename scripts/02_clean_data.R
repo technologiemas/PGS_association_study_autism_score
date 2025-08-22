@@ -1,3 +1,6 @@
+rm(list = ls(all = TRUE))
+gc()
+
 library(dplyr)
 library(tidyr)
 library(haven)
@@ -5,29 +8,22 @@ source("scripts/00_column_names.R")
 
 data = readRDS("data/processed/01_full_dataset.rds")
 
+
+# --- exploring the data ---
+labels <- lapply(data, function(x) attr(x, "label")) # explanation labels of the columns
+
+# sort(data$genderlkrt12, na.last = TRUE, decreasing = TRUE)
+# sort(data$sex, na.last = TRUE, decreasing = TRUE)
+# table(data$sex)
+# hist(data$m12_aut_sum)
+# hist(data$ysr14_aut_sum)
+# hist(data$P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1)
+
+# --- cleaning the data ---
+
 # filter out people not of european ancestry
 data = data %>%
   filter(EUR_1KG_Outlier == 0)  
-
-# set autism sums to NA if more than 2 items are missing
-set_autsum_na <- function(data, items, indicator, sum_col) {
-  threshold <- 2 # number of items that can be missing
-  data %>%
-    mutate(
-      !!sum_col := if_else(
-        .data[[indicator]] == 1 & rowSums(is.na(select(., all_of(items)))) > threshold,
-        NA_real_,
-        .data[[sum_col]]
-      )
-    )
-}
-
-# Usage set_autsum_na()
-data <- data %>%
-  set_autsum_na(items_m12, "in_YS_12M", "m12_aut_sum") %>%
-  set_autsum_na(items_v12, "in_YS_12V", "v12_aut_sum") %>%
-  set_autsum_na(items_t12, "in_YS_TRF12", "t12_aut_sum") %>%
-  set_autsum_na(items_ysr14, "in_YS_DHBQ14", "ysr14_aut_sum")
 
 # drop rows with NA for all rater types
 data <- data %>%
@@ -37,7 +33,12 @@ data <- data %>%
 data <- data %>%
   filter(!is.na(sex))
 
-# --- creating datasets for each rater ---
+# set sex to MALE and FEMALE using enumeration. set 1 to male and 2 to female
+data$sex <- factor(as_factor(as.numeric(data$sex)), levels = c(1, 2), labels = c("MALE", "FEMALE"))
+data$genderlkrt12 <- factor(as_factor(as.numeric(data$genderlkrt12)), levels = c(1, 2), labels = c("MALE", "FEMALE"))
+
+
+# --- creating separate datasets for each rater ---
 create_rater_dataset <- function(data, filter_col, pheno_cols_general, geno_cols_general, pheno_cols_rater, sum_col) {
   data %>%
     filter(.data[[filter_col]] == 1) %>%
@@ -61,6 +62,7 @@ data_father  <- data_father %>% select(-EUR_1KG_Outlier, -all_of(items_v12))
 data_teacher <- data_teacher %>% select(-EUR_1KG_Outlier, -all_of(items_t12))
 data_ysr     <- data_ysr %>% select(-EUR_1KG_Outlier, -all_of(items_ysr14))
 data <- data %>% select(-in_YS_12M, -in_YS_12V, -in_YS_TRF12, -in_YS_DHBQ14, -EUR_1KG_Outlier, -all_of(items_m12), -all_of(items_v12), -all_of(items_t12), -all_of(items_ysr14))
+
 
 # --- creating long dataset with duplicate FISNumbers, one column for autism_score and one for rater_type ---
 # Step 1: Pivot age columns long
@@ -92,7 +94,8 @@ age_mapped <- left_join(age_long, age_map, by = "age_key")
 data_long <- left_join(age_mapped, score_long)
 data_long <- data_long %>% select(-age_key, -agem12, -agev12, -agetrf12, -ages14, -m12_aut_sum, -v12_aut_sum, -t12_aut_sum, -ysr14_aut_sum)
 
-# data_long$rater_type <- factor(data_long$rater_type)
+data_long$rater_type <- factor(data_long$rater_type)
+data_long_clean <- data_long %>% filter(!is.na(autism_score)) # remove rows with NA in autism_score
 
 # Save the datasets
 saveRDS(data_mother, "data/processed/02_data_mother_clean.rds")
@@ -101,4 +104,5 @@ saveRDS(data_teacher, "data/processed/02_data_teacher_clean.rds")
 saveRDS(data_ysr, "data/processed/02_data_ysr_clean.rds")
 saveRDS(data, "data/processed/02_full_dataset_clean.rds")
 saveRDS(data_long, "data/processed/02_full_dataset_long.rds")
+
 
