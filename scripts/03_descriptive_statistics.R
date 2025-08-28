@@ -2,20 +2,20 @@ rm(list = ls(all = TRUE))
 gc()
 
 library(ggplot2)
-library(moments)
-library(bestNormalize)
-library(pscl)
 library(dplyr)
+library(moments)
+# library(bestNormalize)
+# library(pscl)
 library(tidyr)
 library(ggpubr)
 library(psych)
 
 data = readRDS("data/processed/02_full_dataset_clean.rds")
 data_long = readRDS("data/processed/02_full_dataset_long.rds")
-# data_father = readRDS("data/processed/02_data_father_clean.rds")
+data_father = readRDS("data/processed/02_data_father_clean.rds")
 data_mother = readRDS("data/processed/02_data_mother_clean.rds")
-# data_self = readRDS("data/processed/02_data_ysr_clean.rds")
-# data_teacher = readRDS("data/processed/02_data_teacher_clean.rds")
+data_self = readRDS("data/processed/02_data_ysr_clean.rds")
+data_teacher = readRDS("data/processed/02_data_teacher_clean.rds")
 
 
 # --- distribution plots ---
@@ -32,12 +32,9 @@ data_mother = readRDS("data/processed/02_data_mother_clean.rds")
 #   geom_histogram(binwidth = 0.1) +
 #   labs(title = "Distribution of teacher aut sum", x = "t12_aut_sum", y = "Count") 
 
-# table(data$genderlkrt12)
-# table(data$sex)
 
-
-# --- descriptives and statistical tests ---
-calculate_descriptives <- function(data_long, variable) {
+# --- descriptives and pairwise statistical tests ---
+calculate_descriptives_phenotype <- function(data_long, variable) {
   # Calculate descriptive statistics and perform t-tests for a given variable.
   #
   # Args:
@@ -77,7 +74,34 @@ calculate_descriptives <- function(data_long, variable) {
   return(descriptives)
 }
 
-data_long$P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1
+calculate_descriptives_genotype <- function(data, genotype_variable) {
+  # one t-test per rater_type
+  pvals <- data %>%
+    summarise(t_test_p = t.test({{genotype_variable}} ~ `sex`)$p.value,
+              .groups = "drop")
+
+  # calculate effect sizes
+  effect_sizes <- data %>%
+    reframe(
+      cohen_d = cohen.d({{genotype_variable}} ~ `sex`, data = cur_data())$cohen.d[2],
+    )
+
+  # calculate descriptives for each rater type and sex
+  descriptives <- data %>%
+    group_by(`sex`) %>%
+    summarise(
+      n         = sum(!is.na({{genotype_variable}})),
+      mean      = mean({{genotype_variable}}, na.rm = TRUE),
+      sd        = sd({{genotype_variable}},   na.rm = TRUE),
+      skewness  = skewness({{genotype_variable}},  na.rm = TRUE),
+      kurtosis  = kurtosis({{genotype_variable}},  na.rm = TRUE),
+      .groups   = "drop"
+    ) %>%
+    mutate(p_value = pvals$t_test_p,
+           cohen_d = effect_sizes$cohen_d)
+  
+  return(descriptives)
+}
 
 # correlation matrix of all raters separated on sex
 data_wide = data %>%
@@ -96,9 +120,11 @@ cor_matrix = cor(select(data_wide, m12_aut_sum_FEMALE, m12_aut_sum_MALE, v12_aut
 
 # box plot of all raters separated on sex
 ggplot(data_long, aes(x = sex, y = autism_score)) +
-  geom_boxplot() +
-  facet_wrap(~ rater_type) + 
-  stat_compare_means(method = "t.test", 
+  geom_boxplot(fatten = NULL) +
+  stat_summary(fun.y = mean, geom = "errorbar", aes(ymax = ..y.., ymin = ..y..),
+               width = 0.75, size = 1, linetype = "solid") +
+  facet_wrap(~ rater_type) +
+  stat_compare_means(method = "t.test",
                      bracket.size = 0.7,
                      size= 7,
                      label = "p.signif",      # Use stars: *, **, ***
@@ -122,11 +148,27 @@ ggplot(data_long, aes(x = sex, y = P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1
        subtitle = "Comparison of Female and Male Ratings")
 
 # --- save results ---
-descriptives_phenotype <- calculate_descriptives(data_long, `autism_score`)
-descriptives_genotype <- calculate_descriptives(data_long, `P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1`)
+descriptives_phenotype <- calculate_descriptives_phenotype(data_long, `autism_score`)
+descriptives_genotype <- calculate_descriptives_genotype(data, `P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1`)
 
 descriptives_phenotype
 descriptives_genotype
 cor_matrix
 
+# save descriptives
+write.csv(descriptives_phenotype, "results/descriptives_phenotype.csv", row.names = FALSE)
+write.csv(descriptives_genotype, "results/descriptives_genotype.csv", row.names = FALSE)
+
+
+# count the number of individuals for which each rater type is available for that individual
+data_overlap = data %>%
+  filter(!is.na(m12_aut_sum) & !is.na(v12_aut_sum) & !is.na(t12_aut_sum) & !is.na(ysr14_aut_sum))
+
+nrow(data_overlap[data_overlap$sex == "MALE", ])
+nrow(data_overlap[data_overlap$sex == "FEMALE", ])
+
+# data$P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1 = scale(data$P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1)
+
+# mean(data$P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1[data$sex == "FEMALE"], na.rm = TRUE)
+# mean(data$P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1[data$sex == "MALE"], na.rm = TRUE)
 

@@ -5,8 +5,10 @@ library(geepack)
 library(dplyr)
 library(tidyr)
 
+
 data = readRDS("data/processed/02_full_dataset_clean.rds")
 data_long = readRDS("data/processed/02_full_dataset_long.rds")
+data_mother = readRDS("data/processed/02_data_mother_clean.rds")
 
 covariates = c("PLATFORM", 
               "age",
@@ -16,6 +18,15 @@ covariates = c("PLATFORM",
 # data_long = data_long %>%
 #   mutate(across(c(all_of(covariates), autism_score, P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1), scale))
 
+# rename PGS column
+data_long = data_long %>%
+  rename(PGS = P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1)
+
+data_mother = data_mother %>%
+  rename(PGS = P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1)
 
 # --- GEE models ---
 # TODO after preregistration
+# left out age for now
+
+

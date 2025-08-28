@@ -30,14 +30,14 @@ data = data %>% inner_join(genotype_data, by = "FISNumber")
 data[data == -1] <- NA
 
 # FUNCTION that sums the individual items into an autism scale
-sum_autism = function(data, items, indicator) {
-  name = paste0(str_replace(deparse(substitute(items)), "items_", ""), "_aut_sum")   # take the variable name as a string
+create_autism_score = function(data, items, in_questionnaire, name) {
+  threshold = 2
 
   # create a new column with col name as name that sums the autism scale items
   data = data %>%
       mutate(
-        !!name := if_else(
-          .data[[indicator]] == 1,
+        !!name := if_else( # create new column with aut_sum for the rater if it does not exist yet
+          .data[[in_questionnaire]] == 1 & rowSums(is.na(select(., all_of(items)))) <= threshold, # check if the participant was part of the questionnaire and if threshold (2) or fewer items are missing
           rowSums(select(., all_of(items)), na.rm = TRUE),
           NA_real_
         )
@@ -45,44 +45,11 @@ sum_autism = function(data, items, indicator) {
   return(data)
 }
 
-# FUNCTION to set autism sums to NA if more than 2 items are missing
-set_autsum_na <- function(data, items, indicator, sum_col) {
-  threshold <- 2 # number of items that can be missing
-  data %>%
-    mutate(
-      !!sum_col := if_else(
-        .data[[indicator]] == 1 & rowSums(is.na(select(., all_of(items)))) > threshold,
-        NA_real_,
-        .data[[sum_col]]
-      )
-    )
-}
-
-# amount of NA values in the autism scores
-na_counts <- data %>%
-  summarise(
-    m12_aut_sum_na = sum(is.na(m12_aut_sum)),
-    v12_aut_sum_na = sum(is.na(v12_aut_sum)),
-    t12_aut_sum_na = sum(is.na(t12_aut_sum)),
-    ysr14_aut_sum_na = sum(is.na(ysr14_aut_sum))
-  )
-
-# Usage set_autsum_na()
+# sum the autism scores for each rater type
 data <- data %>%
-  set_autsum_na(items_m12, "in_YS_12M", "m12_aut_sum") %>%
-  set_autsum_na(items_v12, "in_YS_12V", "v12_aut_sum") %>%
-  set_autsum_na(items_t12, "in_YS_TRF12", "t12_aut_sum") %>%
-  set_autsum_na(items_ysr14, "in_YS_DHBQ14", "ysr14_aut_sum")
-
-
-# --- some cleaning and saving dataset ---
-# change NA in in_YS_12M, in_YS_12V, in_YS_TRF12, in_YS_DHBQ14 to 0
-data$in_YS_12M[is.na(data$in_YS_12M)] <- 0
-data$in_YS_12V[is.na(data$in_YS_12V)] <- 0
-data$in_YS_TRF12[is.na(data$in_YS_TRF12)] <- 0
-data$in_YS_DHBQ14[is.na(data$in_YS_DHBQ14)] <- 0
+  create_autism_score(items_m12, "in_YS_12M", "m12_aut_sum") %>%
+  create_autism_score(items_v12, "in_YS_12V", "v12_aut_sum") %>%
+  create_autism_score(items_t12, "in_YS_TRF12", "t12_aut_sum") %>%
+  create_autism_score(items_ysr14, "in_YS_DHBQ14", "ysr14_aut_sum")
 
 saveRDS(data, "data/processed/01_full_dataset.rds")
-
-
-

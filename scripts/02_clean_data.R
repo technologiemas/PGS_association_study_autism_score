@@ -12,22 +12,15 @@ data = readRDS("data/processed/01_full_dataset.rds")
 # --- exploring the data ---
 labels <- lapply(data, function(x) attr(x, "label")) # explanation labels of the columns
 
-# sort(data$genderlkrt12, na.last = TRUE, decreasing = TRUE)
-# sort(data$sex, na.last = TRUE, decreasing = TRUE)
-# table(data$sex)
-# hist(data$m12_aut_sum)
-# hist(data$ysr14_aut_sum)
-# hist(data$P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1)
-
 # --- cleaning the data ---
 
 # filter out people not of european ancestry
 data = data %>%
   filter(EUR_1KG_Outlier == 0)  
 
-# drop rows with NA for all rater types
-data <- data %>%
-  filter(!is.na(m12_aut_sum) | !is.na(v12_aut_sum) | !is.na(t12_aut_sum) | !is.na(ysr14_aut_sum))
+# # drop rows with NA for all rater types
+# data <- data %>%
+#   filter(!is.na(m12_aut_sum) | !is.na(v12_aut_sum) | !is.na(t12_aut_sum) | !is.na(ysr14_aut_sum))
 
 # drop rows with NA for sex
 data <- data %>%
@@ -95,7 +88,7 @@ data_long <- left_join(age_mapped, score_long)
 data_long <- data_long %>% select(-age_key, -agem12, -agev12, -agetrf12, -ages14, -m12_aut_sum, -v12_aut_sum, -t12_aut_sum, -ysr14_aut_sum)
 
 data_long$rater_type <- factor(data_long$rater_type)
-data_long_clean <- data_long %>% filter(!is.na(autism_score)) # remove rows with NA in autism_score
+# data_long <- data_long %>% filter(!is.na(autism_score)) # remove rows with NA in autism_score
 
 # Save the datasets
 saveRDS(data_mother, "data/processed/02_data_mother_clean.rds")
@@ -104,5 +97,6 @@ saveRDS(data_teacher, "data/processed/02_data_teacher_clean.rds")
 saveRDS(data_ysr, "data/processed/02_data_ysr_clean.rds")
 saveRDS(data, "data/processed/02_full_dataset_clean.rds")
 saveRDS(data_long, "data/processed/02_full_dataset_long.rds")
+
 
 
