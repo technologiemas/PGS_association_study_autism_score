@@ -1,100 +1,103 @@
 rm(list = ls(all = TRUE))
 gc()
 
-library(ggplot2)
+# library(ggplot2)
 library(dplyr)
 library(moments)
 # library(bestNormalize)
 # library(pscl)
 library(tidyr)
-library(ggpubr)
+# library(ggpubr)
 library(psych)
 
 data = readRDS("data/processed/02_full_dataset_clean.rds")
 data_long = readRDS("data/processed/02_full_dataset_long.rds")
-data_father = readRDS("data/processed/02_data_father_clean.rds")
-data_mother = readRDS("data/processed/02_data_mother_clean.rds")
-data_self = readRDS("data/processed/02_data_ysr_clean.rds")
-data_teacher = readRDS("data/processed/02_data_teacher_clean.rds")
 
 
-# --- distribution plots ---
-# plot the distribution of the phenotype data
-# ggplot(data, aes(x = m12_aut_sum)) +
-#   geom_histogram(binwidth = 0.1) +
-#   labs(title = "Distribution of mother aut sum", x = "m12_aut_sum", y = "Count") 
+# --- distribution of data ---
 
-# ggplot(data, aes(x = ysr14_aut_sum)) +
-#   geom_histogram(binwidth = 0.1) +
-#   labs(title = "Distribution of self aut sum", x = "ysr14_aut_sum", y = "Count")
+shapiro.test(sample(data_long$autism_score[data_long$`rater_type` == "m12"], 2000)) # result: not normally distributed
+shapiro.test(sample(data_long$autism_score[data_long$`rater_type` == "v12"], 2000)) # result: not normally distributed
+shapiro.test(sample(data_long$autism_score[data_long$`rater_type` == "t12"], 2000)) # result: not normally distributed
+shapiro.test(sample(data_long$autism_score[data_long$`rater_type` == "ysr14"], 2000)) # result: not normally distributed
 
-# ggplot(data, aes(x = t12_aut_sum)) +
-#   geom_histogram(binwidth = 0.1) +
-#   labs(title = "Distribution of teacher aut sum", x = "t12_aut_sum", y = "Count") 
+shapiro.test(sample(data$P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1, 2000)) # result: normally distributed
 
 
 # --- descriptives and pairwise statistical tests ---
-calculate_descriptives_phenotype <- function(data_long, variable) {
-  # Calculate descriptive statistics and perform t-tests for a given variable.
+
+calculate_descriptives_phenotype <- function(data_long, phenotype) {
+  # Calculate descriptive statistics and perform statistical tests for the phenotype autism scores per rater
   #
   # Args:
   #   data_long: A data frame containing the data in long format
-  #   variable: The variable for which to calculate descriptives and perform t-tests.
+  #   phenotype: The rater for which to calculate descriptives and perform tests.
   #
   # Returns:
-  #   A data frame with descriptive statistics and p-values from t-tests.
-
-  # one t-test per rater_type
+  #   A data frame with descriptive statistics and p-values
+  
+  # one t-test per rater_type and correct for multiple testing
   pvals <- data_long %>%
     group_by(`rater_type`) %>%
-    summarise(t_test_p = t.test({{variable}} ~ `sex`)$p.value,
+    summarise(p_value = wilcox.test({{phenotype}} ~ `sex`)$p.value, # this test was determined as data was non normally distributed according to the Shapiro-Wilk test (above)
               .groups = "drop")
 
   # calculate effect sizes
   effect_sizes <- data_long %>%
     group_by(`rater_type`) %>%
     reframe(
-      cohen_d = cohen.d({{variable}} ~ `sex`, data = cur_data())$cohen.d[2],
+      cohen_d = cohen.d({{phenotype}} ~ `sex`, data = cur_data())$cohen.d[2],
     )
 
   # calculate descriptives for each rater type and sex
   descriptives <- data_long %>%
     group_by(`rater_type`, `sex`) %>%
     summarise(
-      n         = sum(!is.na({{variable}})),
-      mean      = mean({{variable}}, na.rm = TRUE),
-      sd        = sd({{variable}},   na.rm = TRUE),
-      skewness  = skewness({{variable}},  na.rm = TRUE),
-      kurtosis  = kurtosis({{variable}},  na.rm = TRUE),
+      n         = sum(!is.na({{phenotype}})),
+      mean      = mean({{phenotype}}, na.rm = TRUE),
+      sd        = sd({{phenotype}},   na.rm = TRUE),
+      skewness  = skewness({{phenotype}},  na.rm = TRUE),
+      kurtosis  = kurtosis({{phenotype}},  na.rm = TRUE),
       .groups   = "drop"
     ) %>%
     left_join(pvals, by = "rater_type") %>%
     left_join(effect_sizes, by = "rater_type")
 
+  descriptives$p_value = descriptives$p_value * 4 # Bonferroni correction for 4 tests
+
   return(descriptives)
 }
 
-calculate_descriptives_genotype <- function(data, genotype_variable) {
+calculate_descriptives_genotype <- function(data, PGS) {
+  # Calculate descriptive statistics and perform statistical tests for the polygenic scores
+  #
+  # Args:
+  #   data: A data frame containing the data where each row is a FISNumber (participant)
+  #   PGS: The polygenic score variable
+  #
+  # Returns:
+  #   A data frame with descriptive statistics and p-values
+
   # one t-test per rater_type
   pvals <- data %>%
-    summarise(t_test_p = t.test({{genotype_variable}} ~ `sex`)$p.value,
+    summarise(t_test_p = t.test({{PGS}} ~ `sex`)$p.value, # t-test was chosen as data is normally distributed according to Shapiro-Wilk test (above)
               .groups = "drop")
 
   # calculate effect sizes
   effect_sizes <- data %>%
     reframe(
-      cohen_d = cohen.d({{genotype_variable}} ~ `sex`, data = cur_data())$cohen.d[2],
+      cohen_d = cohen.d({{PGS}} ~ `sex`, data = cur_data())$cohen.d[2],
     )
 
   # calculate descriptives for each rater type and sex
   descriptives <- data %>%
     group_by(`sex`) %>%
     summarise(
-      n         = sum(!is.na({{genotype_variable}})),
-      mean      = mean({{genotype_variable}}, na.rm = TRUE),
-      sd        = sd({{genotype_variable}},   na.rm = TRUE),
-      skewness  = skewness({{genotype_variable}},  na.rm = TRUE),
-      kurtosis  = kurtosis({{genotype_variable}},  na.rm = TRUE),
+      n         = sum(!is.na({{PGS}})),
+      mean      = mean({{PGS}}, na.rm = TRUE),
+      sd        = sd({{PGS}},   na.rm = TRUE),
+      skewness  = skewness({{PGS}},  na.rm = TRUE),
+      kurtosis  = kurtosis({{PGS}},  na.rm = TRUE),
       .groups   = "drop"
     ) %>%
     mutate(p_value = pvals$t_test_p,
@@ -107,68 +110,28 @@ calculate_descriptives_genotype <- function(data, genotype_variable) {
 data_wide = data %>%
   pivot_wider(names_from = sex, values_from = c(m12_aut_sum, v12_aut_sum, t12_aut_sum, ysr14_aut_sum))
 
-cor_matrix = cor(select(data_wide, m12_aut_sum_FEMALE, m12_aut_sum_MALE, v12_aut_sum_FEMALE, v12_aut_sum_MALE, t12_aut_sum_FEMALE, t12_aut_sum_MALE, ysr14_aut_sum_FEMALE, ysr14_aut_sum_MALE), use = "pairwise.complete.obs")
-
-
-# --- boxplots of phenotype data ---
-## box plot of mother rated phenotype separated on sex
-# ggplot(data_mother, aes(x = sex, y = m12_aut_sum)) +
-#   geom_boxplot() +
-#   # add p_value from descriptives
-#   labs(title = "Mother rated autism score by sex",
-#        subtitle = paste("p =", round(pvals$t_test_p[pvals$rater_type == "m12"], 3)))
-
-# box plot of all raters separated on sex
-ggplot(data_long, aes(x = sex, y = autism_score)) +
-  geom_boxplot(fatten = NULL) +
-  stat_summary(fun.y = mean, geom = "errorbar", aes(ymax = ..y.., ymin = ..y..),
-               width = 0.75, size = 1, linetype = "solid") +
-  facet_wrap(~ rater_type) +
-  stat_compare_means(method = "t.test",
-                     bracket.size = 0.7,
-                     size= 7,
-                     label = "p.signif",      # Use stars: *, **, ***
-                     comparisons = list(c("FEMALE", "MALE")),  # Adjust to your factor levels
-                     hide.ns = TRUE)    +      # Hide non-significant comparisons
-  theme(text = element_text(size = 20)) +   # larger font size
-  labs(title = "Autism Score by Rater Type and Sex",
-       subtitle = "Comparison of Female and Male Ratings")
-
-# box plot of genotype
-ggplot(data_long, aes(x = sex, y = P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1)) +
-  geom_boxplot() +
-  stat_compare_means(method = "t.test", 
-                     bracket.size = 0.7,
-                     size= 7,
-                     label = "p.signif",      # Use stars: *, **, ***
-                     comparisons = list(c("FEMALE", "MALE"))  # Adjust to your factor levels
-                     )    +
-  theme(text = element_text(size = 20)) +   # larger font size
-  labs(title = "Genotype by Sex",
-       subtitle = "Comparison of Female and Male Ratings")
-
-# --- save results ---
-descriptives_phenotype <- calculate_descriptives_phenotype(data_long, `autism_score`)
-descriptives_genotype <- calculate_descriptives_genotype(data, `P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1`)
-
-descriptives_phenotype
-descriptives_genotype
-cor_matrix
-
-# save descriptives
-write.csv(descriptives_phenotype, "results/descriptives_phenotype.csv", row.names = FALSE)
-write.csv(descriptives_genotype, "results/descriptives_genotype.csv", row.names = FALSE)
-
+cor_matrix_females = cor(select(data_wide, m12_aut_sum_FEMALE, v12_aut_sum_FEMALE, t12_aut_sum_FEMALE, ysr14_aut_sum_FEMALE), use = "pairwise.complete.obs")
+cor_matrix_males = cor(select(data_wide, m12_aut_sum_MALE, v12_aut_sum_MALE, t12_aut_sum_MALE, ysr14_aut_sum_MALE), use = "pairwise.complete.obs")
 
 # count the number of individuals for which each rater type is available for that individual
 data_overlap = data %>%
   filter(!is.na(m12_aut_sum) & !is.na(v12_aut_sum) & !is.na(t12_aut_sum) & !is.na(ysr14_aut_sum))
 
-nrow(data_overlap[data_overlap$sex == "MALE", ])
-nrow(data_overlap[data_overlap$sex == "FEMALE", ])
 
-# data$P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1 = scale(data$P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1)
+# --- save results ---
 
-# mean(data$P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1[data$sex == "FEMALE"], na.rm = TRUE)
-# mean(data$P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1[data$sex == "MALE"], na.rm = TRUE)
+descriptives_phenotype <- calculate_descriptives_phenotype(data_long, `autism_score`)
+descriptives_genotype <- calculate_descriptives_genotype(data, `P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1`)
 
+descriptives_phenotype
+descriptives_genotype
+
+cor_matrix_females
+cor_matrix_males
+
+nrow(data_overlap[data_overlap$sex == "MALE", ]) # overlap sample males
+nrow(data_overlap[data_overlap$sex == "FEMALE", ]) # overlap sample females
+
+# save descriptives
+write.csv(descriptives_phenotype, "results/descriptives_phenotype.csv", row.names = FALSE)
+write.csv(descriptives_genotype, "results/descriptives_genotype.csv", row.names = FALSE)

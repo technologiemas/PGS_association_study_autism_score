@@ -1,0 +1,53 @@
+rm(list = ls(all = TRUE))
+gc()
+
+library(ggplot2)
+library(ggpubr)
+
+
+data = readRDS("data/processed/02_full_dataset_clean.rds")
+data_long = readRDS("data/processed/02_full_dataset_long.rds")
+data_father = readRDS("data/processed/02_data_father_clean.rds")
+data_mother = readRDS("data/processed/02_data_mother_clean.rds")
+data_self = readRDS("data/processed/02_data_ysr_clean.rds")
+data_teacher = readRDS("data/processed/02_data_teacher_clean.rds")
+
+
+# plot the distribution of the phenotype data
+ggplot(data, aes(x = m12_aut_sum)) +
+  geom_histogram(binwidth = 1) +
+  labs(title = "Distribution of mother aut sum", x = "m12_aut_sum", y = "Count") 
+
+
+# --- boxplots of phenotype data ---
+
+# box plot of all raters separated on sex
+ggplot(data_long, aes(x = sex, y = autism_score)) +
+  geom_boxplot(fatten = NULL) +
+  stat_summary(fun.y = mean, geom = "errorbar", aes(ymax = ..y.., ymin = ..y..),
+               width = 0.75, size = 1, linetype = "solid") +
+  facet_wrap(~ rater_type) +
+  stat_compare_means(method = "wilcox.test",
+                     bracket.size = 0.7,
+                     size= 7,
+                     label = "p.signif",      # Use stars: *, **, ***
+                     comparisons = list(c("FEMALE", "MALE")),  # Adjust to your factor levels
+                     hide.ns = TRUE)    +      # Hide non-significant comparisons
+  theme(text = element_text(size = 20)) +   # larger font size
+  labs(title = "Autism Score by Rater Type and Sex",
+       subtitle = "Comparison of Female and Male Ratings")
+
+
+# --- boxplots of genotype  data ---
+
+ggplot(data_long, aes(x = sex, y = P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1)) +
+  geom_boxplot() +
+  stat_compare_means(method = "t.test", 
+                     bracket.size = 0.7,
+                     size= 7,
+                     label = "p.signif",      # Use stars: *, **, ***
+                     comparisons = list(c("FEMALE", "MALE"))  # Adjust to your factor levels
+                     )    +
+  theme(text = element_text(size = 20)) +   # larger font size
+  labs(title = "Genotype by Sex",
+       subtitle = "Comparison of Female and Male Ratings")
