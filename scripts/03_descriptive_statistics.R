@@ -12,7 +12,7 @@ library(psych)
 
 data = readRDS("data/processed/02_full_dataset_clean.rds")
 data_long = readRDS("data/processed/02_full_dataset_long.rds")
-
+length(data$FISNumber[data$sex == "FEMALE"])
 
 # --- distribution of data ---
 

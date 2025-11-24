@@ -48,6 +48,7 @@ data_mother  <- create_rater_dataset(data, "in_YS_12M", pheno_cols_general, geno
 data_father  <- create_rater_dataset(data, "in_YS_12V", pheno_cols_general, geno_cols_general, pheno_cols_father, "v12_aut_sum")
 data_teacher <- create_rater_dataset(data, "in_YS_TRF12", pheno_cols_general, geno_cols_general, pheno_cols_teacher, "t12_aut_sum")
 data_ysr     <- create_rater_dataset(data, "in_YS_DHBQ14", pheno_cols_general, geno_cols_general, pheno_cols_ysr, "ysr14_aut_sum")
+data_all_items = data
 
 # deselect columns related to items, outliers and indicators (in_YS_12M, in_YS_12V, in_YS_TRF12, in_YS_DHBQ14)
 data_mother  <- data_mother %>% select(-EUR_1KG_Outlier, -all_of(items_m12))
@@ -97,6 +98,4 @@ saveRDS(data_teacher, "data/processed/02_data_teacher_clean.rds")
 saveRDS(data_ysr, "data/processed/02_data_ysr_clean.rds")
 saveRDS(data, "data/processed/02_full_dataset_clean.rds")
 saveRDS(data_long, "data/processed/02_full_dataset_long.rds")
-
-
-
+saveRDS(data_all_items, "data/processed/02_data_all_items.rds")
