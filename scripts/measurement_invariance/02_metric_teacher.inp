@@ -1,20 +1,24 @@
-TITLE: Configural model - test data ordinal items, invariant simulated data;
+TITLE: Metric model teacher;
 DATA: 
-    FILE = item_data_MI.dat;
+    file = ../../data/processed/measurement_invariance/item_data_teacher.dat;
     FORMAT = FREE;
 
 VARIABLE:
-  NAMES = group item1-item10;
+  NAMES = item1-item10 sex family;
   CATEGORICAL = item1-item10;
-  GROUPING = group (1 = male 2 = female);
+  GROUPING = sex (1 = male 2 = female);
+  CLUSTER = family;
+  MISSING = *;
 
 ANALYSIS:
   ESTIMATOR = WLSMV;
+  TYPE = COMPLEX;
   PARAMETERIZATION = THETA;    ! needed to estimate residual
 ! variances for categorical indicators
+  DIFFTEST = configural_model_teacher.dat;
 
 MODEL:
-  F BY item1-item10* (L1-L10); ! freely estimated
+  F BY item1-item10* (L1-L10); ! constricted with female
 
   ! identification: factor mean fixed to zero in male
   [F@0];
@@ -35,6 +39,7 @@ MODEL:
   [item9$1] (t91);   [item9$2] (t92);
   [item10$1] (t101);   [item10$2] (t102);
 
+
   ! residual variances: fixed to 1 in male 
   item1@1 (e1);
   item2@1 (e2);
@@ -49,15 +54,13 @@ MODEL:
 
 ! ---------- GROUP 2: FEMALE ----------
 MODEL female:
-! Do I have to uncomment this?
-  F BY item1-item10*;
+  F BY item1-item10* (L1-L10); ! constrained between the grouops
 
-
-  ! factor mean estimated freely in female
+  ! factor mean free
   [F];     
 
-  ! factor variance fixed to 1 in female as required
-  F@1;
+  ! factor variance is now estimated freely in females!
+  F;
 
   ! Threshold constraints for female:
   ! - first threshold for each item constrained equal to male:
@@ -72,15 +75,14 @@ MODEL female:
   [item6$1] (t61);   [item6$2];
   [item7$1] (t71);   [item7$2];
   [item8$1] (t81);   [item8$2];
-  [item9$1] (t91);   [item9$2] (t92);
-  [item10$1] (t101);   [item10$2] (t102);
+  [item9$1] (t91);   [item9$2];
+  [item10$1] (t101);   [item10$2];
 
   ! Residual variances: estimated freely in female 
   item1-item10*;
 
 SAVEDATA:
-DIFFTEST = configural_model.dat;
+  DIFFTEST = metric_model_teacher.dat;
 
 OUTPUT:
-  STDYX MODINDICES; 
-
+  STDYX MODINDICES;

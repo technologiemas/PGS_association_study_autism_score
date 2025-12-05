@@ -10,17 +10,17 @@
 renv
 
 # Data
-/data/
-/results/
+*.dat
+*.rds
+*.sav
+*.csv
+
+# results
+*.out
+*.csv
+*.dgm
 
 # Ignore all files in the data and results directories, except for .gitkeep files
-/data/*
-!/data/.gitkeep
-!/data/raw/.gitkeep
-!/data/processed/.gitkeep
-
-/results/*
-!/results/.gitkeep
 
 # Mac OS-specific storage files
 .DS_Store

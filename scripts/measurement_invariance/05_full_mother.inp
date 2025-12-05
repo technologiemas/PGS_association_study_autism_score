@@ -1,23 +1,25 @@
-TITLE: Strong model - test data ordinal items, invariant simulated data;
+TITLE: Full model mother;
 DATA: 
-    FILE = MI_simulated_data_invariant.dat;
+    file = ../../data/processed/measurement_invariance/item_data_mother.dat;
     FORMAT = FREE;
 
 VARIABLE:
-  NAMES = group item1-item10;
+  NAMES = item1-item10 sex family;
   CATEGORICAL = item1-item10;
-  GROUPING = group (1 = male 2 = female);
+  GROUPING = sex (1 = male 2 = female);
+  CLUSTER = family;
+  MISSING = *;
 
 ANALYSIS:
   ESTIMATOR = WLSMV;
+  TYPE = COMPLEX;
   PARAMETERIZATION = THETA;    ! needed to estimate residual
 ! variances for categorical indicators
-  DIFFTEST = metric_model.dat;
-
+  DIFFTEST = strong_model_mother.dat;
 MODEL:
   F BY item1-item10* (L1-L10); ! constrained with female
 
-  ! identification: factor mean fixed to zero in male
+  ! factor mean fixed to zero in male and in female
   [F@0];
 
   ! factor variance fixed to 1 in male
@@ -35,24 +37,24 @@ MODEL:
   [item9$1] (t91);   [item9$2] (t92);
   [item10$1] (t101);   [item10$2] (t102);
 
-  ! residual variances: fixed to 1 in male (as specified)
-  item1@1 (e1);
-  item2@1 (e2);
-  item3@1 (e3);
-  item4@1 (e4);
-  item5@1 (e5);
-  item6@1 (e6);
-  item7@1 (e7);
-  item8@1 (e8);
-  item9@1 (e9);
-  item10@1 (e10);
+  ! Residual variances: restricted to 1 in males and females
+  item1@1;
+  item2@1;
+  item3@1;
+  item4@1;
+  item5@1;
+  item6@1;
+  item7@1;
+  item8@1;
+  item9@1;
+  item10@1;
 
 ! ---------- GROUP 2: FEMALE ----------
 MODEL female:
-  F BY item1-item10* (L1-L10); ! constrained between the grouops
+  F BY item1-item10* (L1-L10); ! constricted between the groups
 
-  ! factor mean is estimated freely in female
-  [F];     
+  ! factor mean fixed to zero in male and in female
+  [F@0];     
 
   ! factor variance free in females
   F;
@@ -69,11 +71,20 @@ MODEL female:
   [item9$1] (t91);   [item9$2] (t92);
   [item10$1] (t101);   [item10$2] (t102);
 
-  ! Residual variances: estimated freely in female 
-  item1-item10*;
+  ! Residual variances: restricted to 1 in males and females
+  item1@1;
+  item2@1;
+  item3@1;
+  item4@1;
+  item5@1;
+  item6@1;
+  item7@1;
+  item8@1;
+  item9@1;
+  item10@1;
 
-SAVEDATA:
-  DIFFTEST = strong_model.dat;
+!SAVEDATA:
+!  DIFFTEST = full_model_mother.dat;
 
 OUTPUT:
   STDYX MODINDICES;

@@ -20,7 +20,7 @@ item_data_self = data %>%
 item_data_teacher = data %>%
     select(all_of(items_t12), sex, FamilyNumber)
 
-# change from haven to ccharacter
+# delete haven labels and convert to character
 item_data_mother <- item_data_mother %>%
   mutate(across(everything(), haven::zap_labels)) %>%
   mutate(across(everything(), as.character))
@@ -37,14 +37,28 @@ item_data_teacher <- item_data_teacher %>%
   mutate(across(everything(), haven::zap_labels)) %>%
   mutate(across(everything(), as.character))
 
-# save ddat to .dat file
+# change MALE to 0 and FEMALE to 1
+item_data_mother$sex <- ifelse(item_data_mother$sex == "MALE", 1,
+                               ifelse(item_data_mother$sex == "FEMALE", 2, NA)) 
+
+item_data_father$sex <- ifelse(item_data_father$sex == "MALE", 1,
+                               ifelse(item_data_father$sex == "FEMALE", 2, NA))
+
+item_data_self$sex <- ifelse(item_data_self$sex == "MALE", 1,
+                             ifelse(item_data_self$sex == "FEMALE", 2, NA))
+
+item_data_teacher$sex <- ifelse(item_data_teacher$sex == "MALE", 1,
+                                ifelse(item_data_teacher$sex == "FEMALE", 2, NA))
+
+
+# save ddat to .dat file with space separator and * for missing values as required by Mplus
 write.table(item_data_mother,
             file = "data/processed/measurement_invariance/item_data_mother.dat",
             quote = FALSE,
             sep = " ",
             row.names = FALSE,
             col.names = FALSE,
-            na = ".")
+            na = "*")
 
 write.table(item_data_father,
             file = "data/processed/measurement_invariance/item_data_father.dat",
@@ -52,7 +66,7 @@ write.table(item_data_father,
             sep = " ",
             row.names = FALSE,
             col.names = FALSE,
-            na = ".")  
+            na = "*")  
 
 write.table(item_data_self,
             file = "data/processed/measurement_invariance/item_data_self.dat",
@@ -60,7 +74,7 @@ write.table(item_data_self,
             sep = " ",
             row.names = FALSE,
             col.names = FALSE,
-            na = ".")
+            na = "*")
 
 write.table(item_data_teacher,
             file = "data/processed/measurement_invariance/item_data_teacher.dat",
@@ -68,4 +82,4 @@ write.table(item_data_teacher,
             sep = " ",
             row.names = FALSE,
             col.names = FALSE,
-            na = ".")  
+            na = "*")  

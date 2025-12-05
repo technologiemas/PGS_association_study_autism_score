@@ -8,6 +8,7 @@ library(tidyr)
 data = readRDS("data/processed/02_full_dataset_clean.rds")
 data_long = readRDS("data/processed/02_full_dataset_long.rds")
 data_mother = readRDS("data/processed/02_data_mother_clean.rds")
+data_teacher = readRDS("data/processed/02_data_teacher_clean.rds")
 
 covariates = c("PLATFORM", 
               "age",

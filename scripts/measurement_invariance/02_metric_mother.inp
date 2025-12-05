@@ -1,0 +1,88 @@
+TITLE: Metric model mother;
+DATA: 
+    file = ../../data/processed/measurement_invariance/item_data_mother.dat;
+    FORMAT = FREE;
+
+VARIABLE:
+  NAMES = item1-item10 sex family;
+  CATEGORICAL = item1-item10;
+  GROUPING = sex (1 = male 2 = female);
+  CLUSTER = family;
+  MISSING = *;
+
+ANALYSIS:
+  ESTIMATOR = WLSMV;
+  TYPE = COMPLEX;
+  PARAMETERIZATION = THETA;    ! needed to estimate residual
+! variances for categorical indicators
+  DIFFTEST = configural_model_mother.dat;
+
+MODEL:
+  F BY item1-item10* (L1-L10); ! constricted with female
+
+  ! identification: factor mean fixed to zero in male
+  [F@0];
+
+  ! factor variance fixed to 1 in male
+  F@1;
+
+  ! thresholds for male: estimated freely but we label 
+  !them so they can be referenced in female
+  [item1$1] (t11);   [item1$2] (t12_ref);   ! item1 is the reference item 
+  [item2$1] (t21);   [item2$2] (t22);
+  [item3$1] (t31);   [item3$2] (t32);
+  [item4$1] (t41);   [item4$2] (t42);
+  [item5$1] (t51);   [item5$2] (t52);
+  [item6$1] (t61);   [item6$2] (t62);
+  [item7$1] (t71);   [item7$2] (t72);
+  [item8$1] (t81);   [item8$2] (t82);
+  [item9$1] (t91);   [item9$2] (t92);
+  [item10$1] (t101);   [item10$2] (t102);
+
+
+  ! residual variances: fixed to 1 in male 
+  item1@1 (e1);
+  item2@1 (e2);
+  item3@1 (e3);
+  item4@1 (e4);
+  item5@1 (e5);
+  item6@1 (e6);
+  item7@1 (e7);
+  item8@1 (e8);
+  item9@1 (e9);
+  item10@1 (e10);
+
+! ---------- GROUP 2: FEMALE ----------
+MODEL female:
+  F BY item1-item10* (L1-L10); ! constrained between the grouops
+
+  ! factor mean free
+  [F];     
+
+  ! factor variance is now estimated freely in females!
+  F;
+
+  ! Threshold constraints for female:
+  ! - first threshold for each item constrained equal to male:
+  ! - second threshold: for item1 (reference) constrained to
+  ! male' second threshold (t12_ref)
+  !   all other second thresholds estimated freely in female 
+  [item1$1] (t11);   [item1$2] (t12_ref);  
+  [item2$1] (t21);   [item2$2];
+  [item3$1] (t31);   [item3$2];
+  [item4$1] (t41);   [item4$2];
+  [item5$1] (t51);   [item5$2];
+  [item6$1] (t61);   [item6$2];
+  [item7$1] (t71);   [item7$2];
+  [item8$1] (t81);   [item8$2];
+  [item9$1] (t91);   [item9$2];
+  [item10$1] (t101);   [item10$2];
+
+  ! Residual variances: estimated freely in female 
+  item1-item10*;
+
+SAVEDATA:
+  DIFFTEST = metric_model_mother.dat;
+
+OUTPUT:
+  STDYX MODINDICES;
