@@ -1,7 +1,7 @@
 # wanted columns genotype data
 geno_cols_general = c("FISNumber",
                       "EUR_1KG_Outlier", # outliers from 1KG EUR PCA
-                      "P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1", # PGS for autism from Grove et al that has the highest explained variance
+                      "P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1", # PGS determined to have the highest R2 in testing in 05_pgs_testing.R
                       "PLATFORM",
                       "PC1_1KG", "PC2_1KG", "PC3_1KG", "PC4_1KG", "PC5_1KG", "PC6_1KG", "PC7_1KG", "PC8_1KG", "PC9_1KG", "PC10_1KG")
 

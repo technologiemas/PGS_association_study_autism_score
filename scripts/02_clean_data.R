@@ -18,9 +18,9 @@ labels <- lapply(data, function(x) attr(x, "label")) # explanation labels of the
 data = data %>%
   filter(EUR_1KG_Outlier == 0)  
 
-# # drop rows with NA for all rater types
-# data <- data %>%
-#   filter(!is.na(m12_aut_sum) | !is.na(v12_aut_sum) | !is.na(t12_aut_sum) | !is.na(ysr14_aut_sum))
+# drop rows with NA for all rater types
+data <- data %>%
+  filter(!if_all(c(m12_aut_sum, v12_aut_sum, t12_aut_sum, ysr14_aut_sum), is.na))
 
 # drop rows with NA for sex
 data <- data %>%
@@ -89,7 +89,14 @@ data_long <- left_join(age_mapped, score_long)
 data_long <- data_long %>% select(-age_key, -agem12, -agev12, -agetrf12, -ages14, -m12_aut_sum, -v12_aut_sum, -t12_aut_sum, -ysr14_aut_sum)
 
 data_long$rater_type <- factor(data_long$rater_type)
-# data_long <- data_long %>% filter(!is.na(autism_score)) # remove rows with NA in autism_score
+data_long <- data_long %>% filter(!is.na(autism_score)) # remove rows with NA in autism_score
+
+# ordinalize autism score into three levels: 0, 1-3, 4+
+data_long = data_long %>%
+  mutate(autism_score_ordinal = cut(autism_score,
+                                 breaks = c(-Inf, 1, 4, Inf),
+                                 labels = c("no", "mild", "high"),
+                                 right = FALSE)) 
 
 # Save the datasets
 saveRDS(data_mother, "data/processed/02_data_mother_clean.rds")
@@ -99,3 +106,4 @@ saveRDS(data_ysr, "data/processed/02_data_ysr_clean.rds")
 saveRDS(data, "data/processed/02_full_dataset_clean.rds")
 saveRDS(data_long, "data/processed/02_full_dataset_long.rds")
 saveRDS(data_all_items, "data/processed/02_data_all_items.rds")
+

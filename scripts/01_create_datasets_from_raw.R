@@ -11,6 +11,9 @@ genotype_file_path = "./data/raw/NTR-DSR-5023_AutismSpectrumDisorder_PMID3080455
 phenotype_data = read_sav(phenotype_file_path)
 genotype_data = read_sav(genotype_file_path)
 
+# view labels of the columns in the data
+lapply(phenotype_data, function(x) attr(x, "label"))
+
 # change colname FISNumber to FISnumber for consistency with phenotype data
 genotype_data = genotype_data %>% rename(FISNumber = FISnumber)
 

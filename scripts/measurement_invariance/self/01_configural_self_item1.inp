@@ -1,0 +1,75 @@
+TITLE: Configural model self;
+DATA: 
+    file = ../../data/processed/measurement_invariance/item_data_self.dat;
+    FORMAT = FREE;
+
+VARIABLE:
+  NAMES = item1-item9 sex family;
+  USEVARIABLES = item2-item9 sex family;
+  CATEGORICAL = item2-item9;
+  GROUPING = sex (1 = male 2 = female);
+  CLUSTER = family;
+  MISSING = *;
+
+ANALYSIS:
+  ESTIMATOR = WLSMV;
+  TYPE = COMPLEX;
+  PARAMETERIZATION = THETA;    ! needed to estimate residual
+! variances for categorical indicators
+
+MODEL:
+  F BY item2-item9* (L2-L9); ! freely estimate
+  ! identification: factor mean fixed to zero in male
+  [F@0];
+
+  ! factor variance fixed to 1 in male
+  F@1;
+
+  ! thresholds for male: estimated freely but we label 
+  !them so they can be referenced in female
+  [item2$1] (t21);   [item2$2] (t22_ref); ! item2 is the reference item
+  [item3$1] (t31);   [item3$2] (t32);
+  [item4$1] (t41);   [item4$2] (t42);
+  [item5$1] (t51);   [item5$2] (t52);
+  [item6$1] (t61);   [item6$2] (t62);
+  [item7$1] (t71);   [item7$2] (t72);
+  [item8$1] (t81);   [item8$2] (t82);
+  [item9$1] (t91);   [item9$2] (t92);
+
+  ! residual variances: fixed to 1 in male 
+  item2-item9@1;  
+
+! ---------- GROUP 2: FEMALE ----------
+MODEL female:
+! Factor loadings freely estimated
+  F BY item2-item9*;
+
+  ! factor mean estimated freely in female
+  [F];     
+
+  ! factor variance fixed to 1 in female as required
+  F@1;
+
+  ! Threshold constraints for female:
+  ! - first threshold for each item constrained equal to male:
+  ! - second threshold: for item1 (reference) constrained to
+  ! male' second threshold (t12_ref)
+  !   all other second thresholds estimated freely in female 
+  [item2$1] (t21);   [item2$2] (t22_ref);
+  [item3$1] (t31);   [item3$2];
+  [item4$1] (t41);   [item4$2];
+  [item5$1] (t51);   [item5$2];
+  [item6$1] (t61);   [item6$2];
+  [item7$1] (t71);   [item7$2];
+  [item8$1] (t81);   [item8$2];
+  [item9$1] (t91);   [item9$2];
+
+  ! Residual variances: estimated freely in female 
+  item2-item9*;
+
+SAVEDATA:
+DIFFTEST = configural_model_self_item1.dat;
+
+OUTPUT:
+  STDYX MODINDICES;
+

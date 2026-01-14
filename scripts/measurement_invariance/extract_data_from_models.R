@@ -1,30 +1,51 @@
 library(MplusAutomation)
 library(dplyr)
 
-mother_configural = readModels("scripts/measurement_invariance/01_configural_mother.out") 
-father_configural = readModels("scripts/measurement_invariance/01_configural_father.out")
-self_configural = readModels("scripts/measurement_invariance/01_configural_self.out")
-teacher_configural = readModels("scripts/measurement_invariance/01_configural_teacher.out")
+mother_configural = readModels("scripts/measurement_invariance/mother/01_configural_mother.out") 
+father_configural = readModels("scripts/measurement_invariance/father/01_configural_father.out")
+father_configural_extended = readModels("scripts/measurement_invariance/father/01_configural_father_extended.out")
+self_configural = readModels("scripts/measurement_invariance/self/01_configural_self.out")
+self_configural_extended = readModels("scripts/measurement_invariance/self/01_configural_self_extended.out")
+self_configural_item1 = readModels("scripts/measurement_invariance/self/01_configural_self_item1.out")
+self_configural_extended_item1 = readModels("scripts/measurement_invariance/self/01_configural_self_extended_item1.out")
+teacher_configural = readModels("scripts/measurement_invariance/teacher/01_configural_teacher.out")
+teacher_configural_extended = readModels("scripts/measurement_invariance/teacher/01_configural_teacher_extended.out")
 
-mother_metric = readModels("scripts/measurement_invariance/02_metric_mother.out")
-father_metric = readModels("scripts/measurement_invariance/02_metric_father.out")
-self_metric = readModels("scripts/measurement_invariance/02_metric_self.out")
-teacher_metric = readModels("scripts/measurement_invariance/02_metric_teacher.out")
+mother_metric = readModels("scripts/measurement_invariance/mother/02_metric_mother.out")
+father_metric = readModels("scripts/measurement_invariance/father/02_metric_father.out")
+father_metric_extended = readModels("scripts/measurement_invariance/father/02_metric_father_extended.out")
+self_metric = readModels("scripts/measurement_invariance/self/02_metric_self.out")
+self_metric_extended = readModels("scripts/measurement_invariance/self/02_metric_self_extended.out")
+self_metric_extended_item1 = readModels("scripts/measurement_invariance/self/02_metric_self_extended_item1.out")
+teacher_metric = readModels("scripts/measurement_invariance/teacher/02_metric_teacher.out")
+teacher_metric_extended = readModels("scripts/measurement_invariance/teacher/02_metric_teacher_extended.out")
 
-mother_strong = readModels("scripts/measurement_invariance/03_strong_mother.out")
-father_strong = readModels("scripts/measurement_invariance/03_strong_father.out")
-self_strong = readModels("scripts/measurement_invariance/03_strong_self.out")
-teacher_strong = readModels("scripts/measurement_invariance/03_strong_teacher.out")
+mother_strong = readModels("scripts/measurement_invariance/mother/03_strong_mother.out")
+father_strong = readModels("scripts/measurement_invariance/father/03_strong_father.out")
+father_strong_extended = readModels("scripts/measurement_invariance/father/03_strong_father_extended.out")
+self_strong = readModels("scripts/measurement_invariance/self/03_strong_self.out")
+self_strong_extended = readModels("scripts/measurement_invariance/self/03_strong_self_extended.out")
+self_strong_extended_item1 = readModels("scripts/measurement_invariance/self/03_strong_self_extended_item1.out")
+teacher_strong = readModels("scripts/measurement_invariance/teacher/03_strong_teacher.out")
+teacher_strong_extended = readModels("scripts/measurement_invariance/teacher/03_strong_teacher_extended.out")
 
-mother_strict = readModels("scripts/measurement_invariance/04_strict_mother.out")
-father_strict = readModels("scripts/measurement_invariance/04_strict_father.out")
-self_strict = readModels("scripts/measurement_invariance/04_strict_self.out")
-teacher_strict = readModels("scripts/measurement_invariance/04_strict_teacher.out")
+mother_strict = readModels("scripts/measurement_invariance/mother/04_strict_mother.out")
+father_strict = readModels("scripts/measurement_invariance/father/04_strict_father.out")
+father_strict_extended = readModels("scripts/measurement_invariance/father/04_strict_father_extended.out")
+self_strict = readModels("scripts/measurement_invariance/self/04_strict_self.out")
+self_strict_extended = readModels("scripts/measurement_invariance/self/04_strict_self_extended.out")
+self_strict_extended_item1 = readModels("scripts/measurement_invariance/self/04_strict_self_extended_item1.out")
+teacher_strict = readModels("scripts/measurement_invariance/teacher/04_strict_teacher.out")
+teacher_strict_extended = readModels("scripts/measurement_invariance/teacher/04_strict_teacher_extended.out")
 
-mother_full = readModels("scripts/measurement_invariance/05_full_mother.out")
-father_full = readModels("scripts/measurement_invariance/05_full_father.out")
-self_full = readModels("scripts/measurement_invariance/05_full_self.out")
-teacher_full = readModels("scripts/measurement_invariance/05_full_teacher.out")
+mother_full = readModels("scripts/measurement_invariance/mother/05_full_mother.out")
+father_full = readModels("scripts/measurement_invariance/father/05_full_father.out")
+father_full_extended = readModels("scripts/measurement_invariance/father/05_full_father_extended.out")
+self_full = readModels("scripts/measurement_invariance/self/05_full_self.out")
+self_full_extended = readModels("scripts/measurement_invariance/self/05_full_self_extended.out")
+self_full_extended_item1 = readModels("scripts/measurement_invariance/self/05_full_self_extended_item1.out")
+teacher_full = readModels("scripts/measurement_invariance/teacher/05_full_teacher.out")
+teacher_full_extended = readModels("scripts/measurement_invariance/teacher/05_full_teacher_extended.out")
 
 
 # This code is AI generated but it seems to work perfectly
@@ -47,8 +68,13 @@ safe_rmsea_str <- function(m) {
 models <- list(
   Mother  = list(mother_configural, mother_metric, mother_strong, mother_strict, mother_full),
   Father  = list(father_configural, father_metric, father_strong, father_strict, father_full),
+  Father_Extended = list(father_configural_extended, father_metric_extended, father_strong_extended, father_strict_extended, father_full_extended),
   Self    = list(self_configural, self_metric, self_strong, self_strict, self_full),
-  Teacher = list(teacher_configural, teacher_metric, teacher_strong, teacher_strict, teacher_full)
+  Self_Extended = list(self_configural_extended, self_metric_extended, self_strong_extended, self_strict_extended, self_full_extended),
+  Self_Item1 = list(self_configural_item1, self_configural_item1, self_configural_item1, self_configural_item1, self_configural_item1),
+  Self_Extended_Item1 = list(self_configural_extended_item1, self_metric_extended_item1, self_strong_extended_item1, self_strict_extended_item1, self_full_extended_item1),
+  Teacher = list(teacher_configural, teacher_metric, teacher_strong, teacher_strict, teacher_full),
+  Teacher_Extended = list(teacher_configural_extended, teacher_metric_extended, teacher_strong_extended, teacher_strict_extended, teacher_full_extended)
 )
 
 extract_metric <- function(lst, field, fun = safe_num) {
@@ -77,3 +103,5 @@ df <- df %>%
   rename(`RMSEA (90% CI)` = RMSEA,
          `DiffTest p-value` = DiffTest_p,
          `Chi-Square` = ChiSq)
+
+write.csv(df, "results/measurement_invariance_results.csv", row.names = FALSE)

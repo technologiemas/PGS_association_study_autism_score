@@ -1,0 +1,92 @@
+TITLE: Strict model mother;
+DATA: 
+    file = ../../data/processed/measurement_invariance/item_data_mother.dat;
+    FORMAT = FREE;
+
+VARIABLE:
+  NAMES = item1-item10 sex family;
+  CATEGORICAL = item1-item10;
+  GROUPING = sex (1 = male 2 = female);
+  CLUSTER = family;
+  MISSING = *;
+
+ANALYSIS:
+  ESTIMATOR = WLSMV;
+  TYPE = COMPLEX;
+  PARAMETERIZATION = THETA;    ! needed to estimate residual
+! variances for categorical indicators
+  DIFFTEST = strong_model_mother.dat;
+
+MODEL:
+  F BY item1-item10* (L1-L10); ! constrained with female
+
+  ! identification: factor mean fixed to zero in male
+  [F@0];
+
+  ! factor variance fixed to 1 in male
+  F@1;
+
+  ! thresholds are constrained between males and females
+  [item1$1] (t11);   [item1$2] (t12); 
+  [item2$1] (t21);   [item2$2] (t22);
+  [item3$1] (t31);   [item3$2] (t32);
+  [item4$1] (t41);   [item4$2] (t42);
+  [item5$1] (t51);   [item5$2] (t52);
+  [item6$1] (t61);   [item6$2] (t62);
+  [item7$1] (t71);   [item7$2] (t72);
+  [item8$1] (t81);   [item8$2] (t82);
+  [item9$1] (t91);   [item9$2] (t92);
+  [item10$1] (t101);   [item10$2] (t102);
+
+  ! Residual variances: restricted to 1 in males and females
+  item1@1;
+  item2@1;
+  item3@1;
+  item4@1;
+  item5@1;
+  item6@1;
+  item7@1;
+  item8@1;
+  item9@1;
+  item10@1;
+
+! ---------- GROUP 2: FEMALE ----------
+MODEL female:
+  F BY item1-item10* (L1-L10); ! constrained between the grouops
+
+  ! factor mean is estimated freely in female
+  [F];     
+
+  ! factor variance free in females
+  F;
+
+  ! constrained with same labels as in males
+  [item1$1] (t11);   [item1$2] (t12); 
+  [item2$1] (t21);   [item2$2] (t22);
+  [item3$1] (t31);   [item3$2] (t32);
+  [item4$1] (t41);   [item4$2] (t42);
+  [item5$1] (t51);   [item5$2] (t52);
+  [item6$1] (t61);   [item6$2] (t62);
+  [item7$1] (t71);   [item7$2] (t72);
+  [item8$1] (t81);   [item8$2] (t82);
+  [item9$1] (t91);   [item9$2] (t92);
+  [item10$1] (t101);   [item10$2] (t102);
+
+  ! Residual variances: restricted to 1 in males and females
+  item1@1;
+  item2@1;
+  item3@1;
+  item4@1;
+  item5@1;
+  item6@1;
+  item7@1;
+  item8@1;
+  item9@1;
+  item10@1;
+
+SAVEDATA:
+  DIFFTEST = strict_model_mother.dat;
+
+OUTPUT:
+  MODINDICES(ALL, 20)
+  STDYX;

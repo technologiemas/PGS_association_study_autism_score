@@ -8,20 +8,27 @@
 *.Rproj
 .Rprofile
 renv
+.RDataTmp
 
-# Data
+# Data files
 *.dat
 *.rds
 *.sav
 *.csv
+data/processed/measurement_invariance/*
+data/processed/*
+data/raw/*
 
-
-# results
+# output files (mostly MI stuff)
 *.out
-*.csv
 *.dgm
 
+# results folder contents
+results/figures/*
+results/models/*
+
 # Ignore all files in the data and results directories, except for .gitkeep files
+# dont know how yet
 
 # Mac OS-specific storage files
 .DS_Store
