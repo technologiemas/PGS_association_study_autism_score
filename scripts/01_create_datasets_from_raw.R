@@ -28,18 +28,23 @@ genotype_data = genotype_data %>% select(all_of(geno_cols_general))
 data = data %>% inner_join(genotype_data, by = "FISNumber")
 
 # ---
-# calculate autism scores according to So. et al., 2013
 # set items to NA if they are -1 in the data
 data[data == -1] <- NA
 
-# FUNCTION that sums the individual items into an autism scale
-create_autism_score = function(data, items, in_questionnaire, name) {
-  threshold = 2
+# set datatypes of columns to integer where needed
+data <- data %>%
+  mutate(across(all_of(c(items_m12, items_v12, items_t12, items_ysr14,
+                        items_m12_sensitivity, items_v12_sensitivity, items_t12_sensitivity, items_ysr14_sensitivity)), as.integer))
 
-  # create a new column with col name as name that sums the autism scale items
+# FUNCTION that sums the individual items into an autism scale
+create_autism_score = function(data, items, in_questionnaire, col_name) {
+ # calculate autism scores according to So. et al., 2013
+  threshold = 2 # maximum number of missing items allowed to still calculate the sum score
+
+  # create a new column with col name that sums the autism scale items
   data = data %>%
       mutate(
-        !!name := if_else( # create new column with aut_sum for the rater if it does not exist yet
+        !!col_name := if_else( # create new column with aut_sum for the rater if it does not exist yet
           .data[[in_questionnaire]] == 1 & rowSums(is.na(select(., all_of(items)))) <= threshold, # check if the participant was part of the questionnaire and if threshold (2) or fewer items are missing
           rowSums(select(., all_of(items)), na.rm = TRUE),
           NA_real_
@@ -55,4 +60,17 @@ data <- data %>%
   create_autism_score(items_t12, "in_YS_TRF12", "t12_aut_sum") %>%
   create_autism_score(items_ysr14, "in_YS_DHBQ14", "ysr14_aut_sum")
 
+data <- data %>%
+  create_autism_score(items_m12_sensitivity, "in_YS_12M", "m12_aut_sum_sensitivity") %>%
+  create_autism_score(items_v12_sensitivity, "in_YS_12V", "v12_aut_sum_sensitivity") %>%
+  create_autism_score(items_t12_sensitivity, "in_YS_TRF12", "t12_aut_sum_sensitivity") %>%
+  create_autism_score(items_ysr14_sensitivity, "in_YS_DHBQ14", "ysr14_aut_sum_sensitivity")
+
+# set autism sum scores to integer
+data <- data %>%
+  mutate(across(all_of(c("m12_aut_sum", "v12_aut_sum", "t12_aut_sum", "ysr14_aut_sum",
+                        "m12_aut_sum_sensitivity", "v12_aut_sum_sensitivity", "t12_aut_sum_sensitivity", "ysr14_aut_sum_sensitivity")), as.integer))
+
+
 saveRDS(data, "data/processed/01_full_dataset.rds")
+

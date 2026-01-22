@@ -36,7 +36,7 @@ data_long = data_long %>%
 # all categorical variables will be converted to factors (e.g., PLATFORM, rater_type, sex)
 
 data_long = data_long %>%
-  mutate(across(c("age", "PC1", "PC2", "PC3", "PC4", "PC5", "PC6", "PC7", "PC8", "PC9", "PC10", "PGS", "autism_score"),
+  mutate(across(c("age", "PC1", "PC2", "PC3", "PC4", "PC5", "PC6", "PC7", "PC8", "PC9", "PC10", "PGS", "autism_score_sensitivity"),
                 ~ as.numeric(scale(.)), .names = "{col}_scaled"))
 
 data_long = data_long %>%
@@ -44,52 +44,57 @@ data_long = data_long %>%
   mutate(across(c(PLATFORM, rater_type, sex, FISNumber, FamilyNumber), as.factor))
 
 # Convert autism ordinal to an ordered factor
-data_long$autism_score_ordinal <- factor(
-  data_long$autism_score_ordinal,
+data_long$autism_score_ordinal_sensitivity <- factor(
+  data_long$autism_score_ordinal_sensitivity,
   ordered = TRUE,
-  levels  = sort(unique(data_long$autism_score_ordinal))  # no, mild, high
+  levels  = sort(unique(data_long$autism_score_ordinal_sensitivity))  # no, mild, high
 )
 
 # check data types
 sapply(data_long, class)
-levels(data_long$autism_score_ordinal) 
-# rms::plot.xmean.ordinaly(data_long$autism_score_ordinal ~ data_long$PGS_scaled, data = data_long) # visualize ordinal outcome vs predictor to check proportional odds assumption
+levels(data_long$autism_score_ordinal_sensitivity) 
+# rms::plot.xmean.ordinaly(data_long$autism_score_ordinal_sensitivity ~ data_long$PGS_scaled, data = data_long) # visualize ordinal outcome vs predictor to check proportional odds assumption
+
+# create a dataset only including individuals with all raters present
+data_long_all_raters_present = data_long %>%
+  filter(all_rater_present == 1)
+
 
 # --- MODEL FORMULAS ---
 
 # step 0: baseline variance partition - random intercepts only
-m0 = "autism_score_ordinal ~ (1 | FamilyNumber) + (1 | FISNumber)"
+m0 = "autism_score_ordinal_sensitivity ~ (1 | FamilyNumber) + (1 | FISNumber)"
 
 # step 1: main effects
-m1 = "autism_score_ordinal ~ (1 | FamilyNumber) + (1 | FISNumber) +
+m1 = "autism_score_ordinal_sensitivity ~ (1 | FamilyNumber) + (1 | FISNumber) +
     PGS_scaled + sex + rater_type"
 
 # step 2: main + covariates
-m2 = "autism_score_ordinal ~ PGS_scaled + sex + rater_type + (1 | FamilyNumber) + (1 | FISNumber) + 
+m2 = "autism_score_ordinal_sensitivity ~ PGS_scaled + sex + rater_type + (1 | FamilyNumber) + (1 | FISNumber) + 
       PLATFORM + age_scaled +
       PC1_scaled + PC2_scaled + PC3_scaled + PC4_scaled + PC5_scaled + PC6_scaled + PC7_scaled + PC8_scaled + PC9_scaled + PC10_scaled"
 
 # step 3: the three two-way interactions
-m3 = "autism_score_ordinal ~ (1 | FamilyNumber) + (1 | FISNumber) + 
+m3 = "autism_score_ordinal_sensitivity ~ (1 | FamilyNumber) + (1 | FISNumber) + 
       PGS_scaled * rater_type + PGS_scaled * sex + sex * rater_type + 
       PLATFORM + age_scaled +
       PC1_scaled + PC2_scaled + PC3_scaled + PC4_scaled + PC5_scaled + PC6_scaled + PC7_scaled + PC8_scaled + PC9_scaled + PC10_scaled"
 
-m3b = "autism_score_ordinal ~ (1 | FamilyNumber) + (1 | FISNumber) + 
+m3b = "autism_score_ordinal_sensitivity ~ (1 | FamilyNumber) + (1 | FISNumber) + 
       PGS_scaled * rater_type + PGS_scaled * sex + sex * rater_type"
 
 # step 4: three-way interaction
-m4 = "autism_score_ordinal ~ (1 | FamilyNumber) + (1 | FISNumber) + 
+m4 = "autism_score_ordinal_sensitivity ~ (1 | FamilyNumber) + (1 | FISNumber) + 
       PGS_scaled * rater_type * sex +
       PLATFORM + age_scaled +
       PC1_scaled + PC2_scaled + PC3_scaled + PC4_scaled + PC5_scaled + PC6_scaled + PC7_scaled + PC8_scaled + PC9_scaled + PC10_scaled"
 
-m4b = "autism_score_ordinal ~
+m4b = "autism_score_ordinal_sensitivity ~
   (1 | FamilyNumber) + (1 | FISNumber) +
   PGS_scaled * sex * rater_type"
 
 # step 5: three-way interaction with covariate interactions following Keller, 2014
-m5 = "autism_score_ordinal ~ (1 | FamilyNumber) + (1 | FISNumber) + 
+m5 = "autism_score_ordinal_sensitivity ~ (1 | FamilyNumber) + (1 | FISNumber) + 
       PGS_scaled * rater_type * sex +
       (PLATFORM + age_scaled + PC1_scaled + PC2_scaled + PC3_scaled + PC4_scaled + PC5_scaled + PC6_scaled + PC7_scaled + PC8_scaled + PC9_scaled + PC10_scaled) * (PGS_scaled + sex + rater_type)"
 
@@ -112,7 +117,7 @@ run_linear_lmer = function (formula, data) {
   library(lmerTest)
 
   # after "autism_score" delete "_ordinal" to use the continuous outcome
-  formula <- gsub("autism_score_ordinal", "autism_score_scaled", formula)
+  formula <- gsub("autism_score_ordinal_sensitivity", "autism_score_sensitivity_scaled", formula)
 
   fit <- lmer(as.formula(formula),
     data = data
@@ -125,48 +130,15 @@ run_bayesian_ordinal = function (formula, data) {
   library(brms)
   options(mc.cores = parallel::detectCores())
   fit <- brm(
-    formula = as.formula(formula),
+    as.formula(formula),
     data = data,
     family = cumulative(link="logit"),
-    prior = prior(horseshoe(df = 1), class = "b"),
-    control = list(adapt_delta = 0.95), # Helps with horseshoe convergence
     chains = 2,
     cores = 4,
     threads = threading(2)
-)
+  )
   return(fit)
 }
-
-
-priors <- c(
-  # 1. Broad priors for thresholds (Intercepts)
-  prior(normal(0, 3), class = "Intercept"), # SD 3 is broad on logit scale, nearly flat prior
-  
-  # 2. Theory-based priors for Main Effects
-  # SD of 1.0 is "weakly informative" on a logit scale
-  prior(normal(0.02, 0.2), class = "b", coef = "PGS_scaled"), # small effect expected based on prior literature (meta analysis Sollie et al., 2026)
-  prior(normal(0, 1), class = "b", coef = "sex"),
-  prior(normal(0, 1), class = "b", coef = "rater_type"),
-  prior(normal(0, 1), class = "b", coef = "PLATFORM"),
-  prior(normal(0, 1), class = "b", coef = "age_scaled"),
-  
-  # for interactions, we expect smaller effects, so we use a tighter prior
-  prior(normal(0, 0.5), class = "b", coef = "PGS_scaled:rater_type"),
-  prior(normal(0, 0.5), class = "b", coef = "PGS_scaled:sex"),
-  prior(normal(0.2, 0.5), class = "b", coef = "sex:rater_type"),
-  prior(normal(0, 0.5), class = "b", coef = "PGS_scaled:rater_type:sex"),
-
-  # 3. Aggressive Shrinkage for PCs and interactions
-  # Setting a global default for 'b' handles interactions and PCs simultaneously
-  # SD of 0.1 encourages coefficients to be near zero unless they show signal in the data. 
-  # This Reduces model complexity, and also helps with collinearity.
-  prior(normal(0, 0.1), class = "b"), 
-  
-  # 4. Hierarchical priors (Group-level effects)
-  prior(exponential(1), class = "sd")
-)
-
-
 
 fit_m1 <- run_ordinal_clmm(m1, data_long)
 fit_m2 <- run_ordinal_clmm(m2, data_long)
@@ -176,14 +148,19 @@ fit_m4 <- run_ordinal_clmm(m4, data_long)
 # fit_m4b <- run_ordinal_clmm(m4b, data_long)
 fit_m5 <- run_ordinal_clmm(m5, data_long)
 
+fit_m1_all_raters <- run_ordinal_clmm(m1, data_long_all_raters_present)
+fit_m2_all_raters <- run_ordinal_clmm(m2, data_long_all_raters_present)
+fit_m3_all_raters <- run_ordinal_clmm(m3, data_long_all_raters_present)
+# fit_m3b_all_raters <- run_ordinal_clmm(m3b, data_long_all_raters_present)
+fit_m4_all_raters <- run_ordinal_clmm(m4, data_long_all_raters_present)
+# fit_m4b_all_raters_all_raters <- run_ordinal_clmm(m4b, data_long_all_raters_present)
+fit_m5_all_raters <- run_ordinal_clmm(m5, data_long_all_raters_present)
+
 # fit_m1_bayesian <- run_bayesian_ordinal(m1, data_long)
 # fit_m2_bayesian <- run_bayesian_ordinal(m2, data_long)
 # fit_m3_bayesian <- run_bayesian_ordinal(m3, data_long)
-fit_m4_bayesian <- run_bayesian_ordinal(m4, data_long)
-fit_m5_bayesian <- run_bayesian_ordinal(m5, data_long)
-
-summary(fit_m4_bayesian)
-summary(fit_m5_bayesian)
+# fit_m4_bayesian <- run_bayesian_ordinal(m4, data_long)
+# fit_m5_bayesian <- run_bayesian_ordinal(m5, data_long)
 
 # fit_m1_linear = run_linear_lmer(m1, data_long)
 # fit_m2_linear = run_linear_lmer(m2, data_long)
@@ -192,13 +169,22 @@ summary(fit_m5_bayesian)
 # fit_m5_linear = run_linear_lmer(m5, data_long)
 
 # --- SAVE MODEL OUTPUTS ---
-saveRDS(fit_m1, "results/models/fit_m1_clmm.rds")
-saveRDS(fit_m2, "results/models/fit_m2_clmm.rds")
-saveRDS(fit_m3, "results/models/fit_m3_clmm.rds")
+saveRDS(fit_m1, "results/models/sensitivity/fit_m1_clmm_sensitivity.rds")
+saveRDS(fit_m2, "results/models/sensitivity/fit_m2_clmm_sensitivity.rds")
+saveRDS(fit_m3, "results/models/sensitivity/fit_m3_clmm_sensitivity.rds")
 # saveRDS(fit_m3b, "results/models/fit_m3b_clmm.rds")
-saveRDS(fit_m4, "results/models/fit_m4_clmm.rds")
+saveRDS(fit_m4, "results/models/sensitivity/fit_m4_clmm_sensitivity.rds")
 # saveRDS(fit_m4b, "results/models/fit_m4b_clmm.rds")
-saveRDS(fit_m5, "results/models/fit_m5_clmm.rds")
+saveRDS(fit_m5, "results/models/sensitivity/fit_m5_clmm_sensitivity.rds")
+
+saveRDS(fit_m1_all_raters, "results/models/sensitivity/fit_m1_clmm_sensitivity_all_raters.rds")
+saveRDS(fit_m2_all_raters, "results/models/sensitivity/fit_m2_clmm_sensitivity_all_raters.rds")
+saveRDS(fit_m3_all_raters, "results/models/sensitivity/fit_m3_clmm_sensitivity_all_raters.rds")
+# saveRDS(fit_m3b_all_raters, "results/models/fit_m3b_clmm_all_raters.rds")
+saveRDS(fit_m4_all_raters, "results/models/sensitivity/fit_m4_clmm_sensitivity_all_raters.rds")
+# saveRDS(fit_m4b_all_raters, "results/models/fit_m4b_clmm_all_raters.rds")
+saveRDS(fit_m5_all_raters, "results/models/sensitivity/fit_m5_clmm_sensitivity_all_raters.rds")
+
 
 # saveRDS(fit_m1_bayesian, "results/models/fit_m1_bayesian.rds")
 # saveRDS(fit_m2_bayesian, "results/models/fit_m2_bayesian.rds")
@@ -206,9 +192,10 @@ saveRDS(fit_m5, "results/models/fit_m5_clmm.rds")
 # saveRDS(fit_m4_bayesian, "results/models/fit_m4_bayesian.rds")
 # saveRDS(fit_m5_bayesian, "results/models/fit_m5_bayesian.rds")
 
-# saveRDS(fit_m1_linear, "results/models/fit_m1_linear.rds")
-# saveRDS(fit_m2_linear, "results/models/fit_m2_linear.rds")
-# saveRDS(fit_m3_linear, "results/models/fit_m3_linear.rds")
-# saveRDS(fit_m4_linear, "results/models/fit_m4_linear.rds")
-# saveRDS(fit_m5_linear, "results/models/fit_m5_linear.rds")
+# saveRDS(fit_m1_linear, "results/models/sensitivity/fit_m1_linear_sensitivity.rds")
+# saveRDS(fit_m2_linear, "results/models/sensitivity/fit_m2_linear_sensitivity.rds")
+# saveRDS(fit_m3_linear, "results/models/sensitivity/fit_m3_linear_sensitivity.rds")
+# saveRDS(fit_m4_linear, "results/models/sensitivity/fit_m4_linear_sensitivity.rds")
+# saveRDS(fit_m5_linear, "results/models/sensitivity/fit_m5_linear_sensitivity.rds")
+
 

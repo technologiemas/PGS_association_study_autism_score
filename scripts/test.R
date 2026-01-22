@@ -1,0 +1,317 @@
+rm(list = ls(all = TRUE))
+gc()
+
+library(ordinal)
+library(ggplot2)
+library(emmeans)
+library(dplyr)
+
+colors <- c("Male" = "#00C07B", "Female" = "#FFBB09") # set colors for the plots
+
+
+# helper functions
+relabel_rater <- function(x) {
+  factor(
+    x,
+    levels = c("m12", "v12", "t12", "ysr14"),
+    labels = c("Mother", "Father", "Teacher", "Self")
+  )
+}
+
+relabel_sex <- function(x) {
+  factor(
+    x,
+    levels = c("MALE", "FEMALE"),
+    labels = c("Male", "Female")
+  )
+}
+
+relabel_autism_score <- function(x) {
+  factor(
+    x,
+    levels = c(1, 2, 3),
+    labels = c("No", "Low", "High")
+  )
+}
+
+
+# calculate emmeans and contrasts for two way interaction
+get_rater_sex_emmeans <- function(model_fit, outcome_var = "autism_score_ordinal") {
+
+  emm <- emmeans(
+    model_fit,
+    as.formula(paste("~ sex *", outcome_var, "| rater_type")),
+    mode = "prob",
+    cov.reduce = mean
+  )
+
+  probs <- as.data.frame(emm) %>%
+    mutate(
+      rater_type = relabel_rater(rater_type),
+      sex = relabel_sex(sex),
+      autism_score_ordinal = relabel_autism_score(get(outcome_var))
+    )
+
+  contr <- contrast(
+    emm,
+    method = "pairwise",
+    by = c("rater_type", outcome_var),
+    adjust = "none"
+  )
+
+  contr_df <- summary(contr, type = "response") %>%
+    as.data.frame() %>%
+    mutate(
+      lower = estimate - 1.96 * SE,
+      upper = estimate + 1.96 * SE,
+      diff_prob = estimate,
+      rater_type = relabel_rater(rater_type),
+      autism_score_ordinal = relabel_autism_score(get(outcome_var))
+    )
+
+  list(
+    probs = probs,
+    contrasts = contr_df
+  )
+}
+
+
+# --- rater_type * sex plots ---
+
+plot_pred_prob_rater_sex <- function(probs_df, model_label, outcome_var = "autism_score_ordinal") {
+
+  ggplot(
+    probs_df,
+    aes(
+      x = get(outcome_var),
+      y = prob,
+      color = sex,
+      group = sex
+    )
+  ) +
+    geom_line(position = position_dodge(width = 0.3)) +
+    geom_point(position = position_dodge(width = 0.3)) +
+    geom_errorbar(
+      aes(ymin = asymp.LCL, ymax = asymp.UCL),
+      width = 0.2,
+      position = position_dodge(width = 0.3)
+    ) +
+    facet_grid(~ rater_type) +
+    scale_color_manual(values = colors) +
+    scale_y_continuous(labels = scales::percent) +
+    labs(
+      y = "Predicted probability (95% CI)",
+      x = "Autism score level",
+      caption = paste("Predicted at mean PGS (PGS = 0). Based on", model_label)
+    ) +
+    theme(legend.position = "top")
+}
+
+plot_pairwise_contrasts_rater_sex <- function(contr_df, model_label, outcome_var = "autism_score_ordinal") {
+
+  ggplot(
+    contr_df,
+    aes(
+      x = diff_prob,
+      y = factor(rater_type, levels = c("Self", "Teacher", "Father", "Mother"))
+    )
+  ) +
+    geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
+    geom_point(aes(color = get(outcome_var)), size = 3) +
+    geom_errorbarh(
+      aes(xmin = lower, xmax = upper, color = get(outcome_var)),
+      height = 0.2
+    ) +
+    scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
+    labs(
+      x = "Difference in predicted probability (95% CI)",
+      y = "Rater",
+      color = paste(outcome_var, "level"),
+      subtitle = "Male − Female",
+      caption = paste("Based on", model_label)
+    ) +
+    theme_minimal()
+}
+
+
+# --- three way interaction plots ---
+
+
+get_three_way_emmeans <- function(model_fit, pgs_range = seq(-3, 3, 0.1), outcome_var = "autism_score_ordinal") {
+
+  emm <- emmeans(
+    model_fit,
+    as.formula(paste("~ sex *", outcome_var, "| PGS_scaled * rater_type")),
+    mode = "prob",
+    at = list(PGS_scaled = pgs_range)
+  )
+
+  as.data.frame(emm) %>%
+    mutate(
+      rater_type = relabel_rater(rater_type),
+      sex = relabel_sex(sex),
+      !!outcome_var := relabel_autism_score(.data[[outcome_var]])
+    )
+}
+
+plot_three_way <- function(df, model_label, outcome_var = "autism_score_ordinal") {
+
+  ggplot(
+    df,
+    aes(
+      x = PGS_scaled,
+      y = prob,
+      color = sex,
+      linetype = get(outcome_var),
+      group = interaction(get(outcome_var), sex)
+    )
+  ) +
+    geom_ribbon(
+      aes(ymin = asymp.LCL, ymax = asymp.UCL, fill = sex),
+      alpha = 0.1,
+      color = NA,
+      show.legend = FALSE
+    ) +
+    geom_line(linewidth = 1) +
+    facet_wrap(~ rater_type, ncol = 2) +
+    scale_color_manual(values = colors) +
+    scale_fill_manual(values = colors) +
+    scale_linetype_manual(values = c("dotted", "longdash", "solid")) +
+    scale_y_continuous(labels = scales::percent) +
+    labs(
+      x = "PGS (SDs)",
+      y = "Predicted Probability (95% CI)",
+      caption = paste("Based on", model_label)
+    ) +
+    theme(legend.position = "bottom")
+}
+
+plot_three_way_high_only <- function(df, model_label, outcome_var = "autism_score_ordinal") {
+
+  df_high <- subset(df, get(outcome_var) == "High")
+
+  ggplot(
+    df_high,
+    aes(
+      x = PGS_scaled,
+      y = prob,
+      color = sex,
+      group = sex
+    )
+  ) +
+    geom_ribbon(
+      aes(ymin = asymp.LCL, ymax = asymp.UCL, fill = sex),
+      alpha = 0.1,
+      color = NA,
+      show.legend = FALSE
+    ) +
+    geom_line(linewidth = 1) +
+    facet_wrap(~ rater_type, ncol = 2) +
+    scale_color_manual(values = colors) +
+    scale_fill_manual(values = colors) +
+    scale_y_continuous(labels = scales::percent) +
+    labs(
+      x = "PGS (SDs)",
+      y = "Predicted Probability",
+      caption = paste("Based on", model_label)
+    ) +
+    theme(legend.position = "bottom")
+}
+
+plot_forest_odds_ratios <- function(model_fit, model_label) {
+
+  coef_summary <- as.data.frame(summary(model_fit)$coefficients)
+
+  fixed <- coef_summary[
+    !grepl("PLATFORM|\\(Intercept\\)|\\||PC", rownames(coef_summary)),
+    , drop = FALSE
+  ]
+
+  plot_data <- data.frame(
+    term = rownames(fixed),
+    estimate = exp(fixed$Estimate),
+    conf.low = exp(fixed$Estimate - 1.96 * fixed$`Std. Error`),
+    conf.high = exp(fixed$Estimate + 1.96 * fixed$`Std. Error`),
+    sig = case_when(
+      fixed$`Pr(>|z|)` < 0.001 ~ "***",
+      fixed$`Pr(>|z|)` < 0.01 ~ "**",
+      fixed$`Pr(>|z|)` < 0.05 ~ "*",
+      TRUE ~ ""
+    )
+  )
+
+  ggplot(plot_data, aes(x = estimate, y = term)) +
+    geom_vline(xintercept = 1, linetype = "dashed", color = "red") +
+    geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2) +
+    geom_point(size = 3) +
+    geom_text(aes(label = sig), x = 0.5, hjust = 1) +
+    scale_x_log10() +
+    labs(
+      x = "Odds Ratio (log scale)",
+      y = NULL,
+      caption = paste("Based on", model_label)
+    ) +
+    theme_minimal()
+}
+
+# --- load models ---
+
+fit_m3 <- readRDS("results/models/fit_m3_clmm.rds")
+fit_m4 <- readRDS("results/models/fit_m4_clmm.rds")
+
+fit_m3_sensitivity <- readRDS("results/models/sensitivity/fit_m3_clmm_sensitivity.rds")
+fit_m4_sensitivity <- readRDS("results/models/sensitivity/fit_m4_clmm_sensitivity.rds")
+
+fit_m3_sensitivity_all_raters <- readRDS("results/models/sensitivity/fit_m3_clmm_sensitivity_all_raters.rds")
+fit_m4_sensitivity_all_raters <- readRDS("results/models/sensitivity/fit_m4_clmm_sensitivity_all_raters.rds")
+
+# --- create plots ---
+# main models
+res_m3 <- get_rater_sex_emmeans(fit_m3, outcome_var = "autism_score_ordinal")
+df_m4 <- get_three_way_emmeans(fit_m4, outcome_var = "autism_score_ordinal")
+
+p_m3_prob <- plot_pred_prob_rater_sex(res_m3$probs, "Model 3", outcome_var = "autism_score_ordinal")
+p_m3_contr <- plot_pairwise_contrasts_rater_sex(res_m3$contrasts, "Model 3", outcome_var = "autism_score_ordinal")
+p_m4_three_way <- plot_three_way(df_m4, "Model 4", outcome_var = "autism_score_ordinal")
+p_m4_three_way_high_only <- plot_three_way_high_only(df_m4, "Model 4", outcome_var = "autism_score_ordinal")
+p_m4_forest <- plot_forest_odds_ratios(fit_m4, "Model 4")
+
+# sensitivity analyses
+res_m3_sensitivity <- get_rater_sex_emmeans(fit_m3_sensitivity, outcome_var = "autism_score_ordinal_sensitivity")
+df_m4_sensitivity <- get_three_way_emmeans(fit_m4_sensitivity, outcome_var = "autism_score_ordinal_sensitivity")
+
+p_m3_prob_sensitivity <- plot_pred_prob_rater_sex(res_m3_sensitivity$probs, "Model 3", outcome_var = "autism_score_ordinal_sensitivity")
+p_m3_contr_sensitivity <- plot_pairwise_contrasts_rater_sex(res_m3_sensitivity$contrasts, "Model 3", outcome_var = "autism_score_ordinal_sensitivity")
+p_m4_three_way_sensitivity <- plot_three_way(df_m4_sensitivity, "Model 4", outcome_var = "autism_score_ordinal_sensitivity")
+p_m4_three_way_high_only_sensitivity <- plot_three_way_high_only(df_m4_sensitivity, "Model 4", outcome_var = "autism_score_ordinal_sensitivity")
+p_m4_forest_sensitivity <- plot_forest_odds_ratios(fit_m4_sensitivity, "Model 4")
+
+# sensitivity analyses all raters present
+res_m3_sensitivity_all_raters <- get_rater_sex_emmeans(fit_m3_sensitivity_all_raters, outcome_var = "autism_score_ordinal_sensitivity")
+df_m4_sensitivity_all_raters <- get_three_way_emmeans(fit_m4_sensitivity_all_raters, outcome_var = "autism_score_ordinal_sensitivity")
+
+p_m3_prob_sensitivity_all_raters <- plot_pred_prob_rater_sex(res_m3_sensitivity_all_raters$probs, "Model 3", outcome_var = "autism_score_ordinal_sensitivity")
+p_m3_contr_sensitivity_all_raters <- plot_pairwise_contrasts_rater_sex(res_m3_sensitivity_all_raters$contrasts, "Model 3", outcome_var = "autism_score_ordinal_sensitivity")
+p_m4_three_way_sensitivity_all_raters <- plot_three_way(df_m4_sensitivity_all_raters, "Model 4", outcome_var = "autism_score_ordinal_sensitivity")
+p_m4_three_way_high_only_sensitivity_all_raters <- plot_three_way_high_only(df_m4_sensitivity_all_raters, "Model 4", outcome_var = "autism_score_ordinal_sensitivity")
+p_m4_forest_sensitivity_all_raters <- plot_forest_odds_ratios(fit_m4_sensitivity_all_raters, "Model 4")
+
+
+# save plots
+
+ggsave(
+  "results/figures/pred_prob_rater_sex.tiff",
+  p_m3_prob,
+  device = "tiff",
+  width = 8.4, height = 6, units = "cm",
+  dpi = 600, scale = 2
+)
+
+ggsave(
+  "results/figures/pairwise_contrast_rater_sex.tiff",
+  p_m3_contr,
+  device = "tiff",
+  width = 8.4, height = 6, units = "cm",
+  dpi = 600, scale = 2
+)
+

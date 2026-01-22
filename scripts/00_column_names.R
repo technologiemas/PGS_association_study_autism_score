@@ -1,3 +1,6 @@
+rm(list = ls(all = TRUE))
+gc()
+
 # wanted columns genotype data
 geno_cols_general = c("FISNumber",
                       "EUR_1KG_Outlier", # outliers from 1KG EUR PCA
@@ -13,6 +16,14 @@ items_m12 = c( "q1m12", "q9m12", "q17m12", "q42m12", "q62m12", "q66m12", "q79m12
 items_v12 = c("q1v12", "q9v12", "q17v12", "q42v12", "q62v12", "q66v12", "q79v12", "q80v12", "q84v12", "q111v12")
 items_t12 = c("q1t12", "q9t12", "q17t12", "q42t12", "q62t12", "q66t12", "q79t12", "q80t12", "q84t12", "q111t12")
 items_ysr14 = c("q1ysr14", "q9ysr14", "q17ysr14", "q42ysr14", "q62ysr14", "q66ysr14", "q79ysr14", "q84ysr14", "q111ysr14") # note: item 80 is not here as it differs with the other questionnaires
+
+# for the sensitivity analysis two items were excluded (q1 and q80). 
+# Q1 was biased for the self scale in the measurement invariance investigations. Q80 is not available in the YSR questionnaire
+items_m12_sensitivity = c("q9m12", "q17m12", "q42m12", "q62m12", "q66m12", "q79m12","q84m12", "q111m12")
+items_v12_sensitivity = c("q9v12", "q17v12", "q42v12", "q62v12", "q66v12", "q79v12", "q84v12", "q111v12")
+items_t12_sensitivity = c("q9t12", "q17t12", "q42t12", "q62t12", "q66t12", "q79t12", "q84t12", "q111t12")
+items_ysr14_sensitivity = c("q9ysr14", "q17ysr14", "q42ysr14", "q62ysr14", "q66ysr14", "q79ysr14", "q84ysr14", "q111ysr14") # note: item 80 is not here as it differs with the other questionnaires
+
 
 # wanted columns phenotype data
 pheno_cols_mother = c("agem12", "in_YS_12M")

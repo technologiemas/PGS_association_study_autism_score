@@ -7,23 +7,18 @@ library(emmeans)
 library(dplyr)
 
 # Load the the clmm model with the best fit (model 3)
-fit_m3 <- readRDS("results/models/fit_m3_clmm.rds")
-fit_m4 <- readRDS("results/models/fit_m4_clmm.rds") # the three way interaction model
+fit_m3 <- readRDS("results/models/sensitivity/fit_m3_clmm_sensitivity.rds")
+fit_m4 <- readRDS("results/models/sensitivity/fit_m4_clmm_sensitivity.rds")
 
-fit_m3_sensitivity <- readRDS("results/models/sensitivity/fit_m3_clmm_sensitivity.rds")
-fit_m4_sensitivity <- readRDS("results/models/sensitivity/fit_m4_clmm_sensitivity.rds")
-
-fit_m3_sensitivitiy_all_raters <- readRDS("results/models/sensitivity/fit_m3_clmm_sensitivity_all_raters.rds")
-fit_m4_sensitivity_all_raters <- readRDS("results/models/sensitivity/fit_m4_clmm_sensitivity_all_raters.rds")
+fit_m3 = readRDS("results/models/sensitivity/fit_m3_clmm_sensitivity_all_raters.rds")
+fit_m4 = readRDS("results/models/sensitivity/fit_m4_clmm_sensitivity_all_raters.rds")
 
 # colors to use
 colors = c("Male" = "#00C07B", "Female" = "#FFBB09")
 
-
 # --- Two-way interaction of the significant finding rater_type * sex ---
-
 # 1. Emmeans to get predicted probabilities for sex by rater type across autism score ordinal levels
-emm_prob_rater_sex <- emmeans(fit_m3, ~ sex * autism_score_ordinal | rater_type, # "within each rater what is the prob for the autism score levels?"
+emm_prob_rater_sex <- emmeans(fit_m3, ~ sex * autism_score_ordinal_sensitivity | rater_type, # "within each rater what is the prob for the autism score levels?"
               mode = "prob",
               cov.reduce = mean, # this averages over PGS and other covariates
               )
@@ -33,7 +28,7 @@ rater_sex_df <- as.data.frame(emm_prob_rater_sex)
 contr_per_rater_type <- contrast(
   emm_prob_rater_sex,
   method = "pairwise",
-  by = c("rater_type", "autism_score_ordinal"),
+  by = c("rater_type", "autism_score_ordinal_sensitivity"),
   adjust = "none"
 )
 # add columns for lower and upper bounds of 95% CI
@@ -52,7 +47,7 @@ rater_sex_df$rater_type <- factor(rater_sex_df$rater_type,
 rater_sex_df$sex <- factor(rater_sex_df$sex, 
                  levels = c("MALE", "FEMALE"), 
                  labels = c("Male", "Female"))
-rater_sex_df$autism_score_ordinal <- factor(rater_sex_df$autism_score_ordinal,
+rater_sex_df$autism_score_ordinal_sensitivity <- factor(rater_sex_df$autism_score_ordinal_sensitivity,
                                    levels = c(1, 2, 3),
                                    labels = c("No", "Low", "High"))
 
@@ -61,13 +56,13 @@ contr_df <- contr_df %>%
     rater_type = factor(rater_type, 
                         levels = c("m12", "v12", "t12", "ysr14"), 
                         labels = c("Mother", "Father", "Teacher", "Self")),
-    autism_score_ordinal = factor(autism_score_ordinal,
+    autism_score_ordinal_sensitivity = factor(autism_score_ordinal_sensitivity,
                                   levels = c(1, 2, 3),
                                   labels = c("No", "Low", "High"))
   )                                   
 
 # 3. Plot predicted probabilities with ggplot2
-ggplot(rater_sex_df, aes(x = as.factor(autism_score_ordinal), y = prob, color = sex, group = sex)) +
+ggplot(rater_sex_df, aes(x = as.factor(autism_score_ordinal_sensitivity), y = prob, color = sex, group = sex)) +
   geom_line(position = position_dodge(width = 0.3)) +
   geom_point(position = position_dodge(width = 0.3)) +
   geom_errorbar(aes(ymin = asymp.LCL, ymax = asymp.UCL), 
@@ -81,15 +76,15 @@ ggplot(rater_sex_df, aes(x = as.factor(autism_score_ordinal), y = prob, color = 
   theme(legend.position = "top")
 
 # save the figure
-ggsave("results/figures/pred_prob_rater_sex.tiff", device = "tiff", width = 8.4, height = 6, units = "cm", dpi = 600, scale = 2)
+ggsave("results/figures/sensitivity/pred_prob_rater_sex_sensitivity.tiff", device = "tiff", width = 8.4, height = 6, units = "cm", dpi = 600, scale = 2)
 
 
 # 3b. Plotting the pairwise contrasts of predicted probabilities
 ggplot(contr_df, aes(x = diff_prob, y = factor(rater_type,
                                                levels = c("Self", "Teacher", "Father", "Mother")))) +
   geom_vline(xintercept = 0, linetype = "dashed", color = "red") + # null line
-  geom_point(aes(color = autism_score_ordinal), size = 3) +
-  geom_errorbarh(aes(xmin = lower, xmax = upper, color = autism_score_ordinal), height = 0.2) +
+  geom_point(aes(color = autism_score_ordinal_sensitivity), size = 3) +
+  geom_errorbarh(aes(xmin = lower, xmax = upper, color = autism_score_ordinal_sensitivity), height = 0.2) +
   # facet_wrap(~ contrast) +  # e.g., Male-Female
   scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
   labs(
@@ -103,7 +98,7 @@ ggplot(contr_df, aes(x = diff_prob, y = factor(rater_type,
   theme_minimal() +
   theme(plot.background = element_rect(fill = "white"))
 
-ggsave("results/figures/pairwise_contrast_rater_sex.tiff", device = "tiff", width = 8.4, height = 6, units = "cm", dpi = 600, scale = 2)
+ggsave("results/figures/sensitivity/pairwise_contrast_rater_sex_sensitivity.tiff", device = "tiff", width = 8.4, height = 6, units = "cm", dpi = 600, scale = 2)
 
 
 # Cumulative Predicted probabilities of belonging to each score category of both sexes by rater type
@@ -122,7 +117,7 @@ ggsave("results/figures/pairwise_contrast_rater_sex.tiff", device = "tiff", widt
 # --- Three-way interaction effects visualization ---
 
 # 1. Get predicted probabilities for three way interaction using emmeans
-rg <- emmeans(fit_m4, ~ sex * autism_score_ordinal | PGS_scaled * rater_type, 
+rg <- emmeans(fit_m4, ~ sex * autism_score_ordinal_sensitivity | PGS_scaled * rater_type, 
               mode = "prob", 
               at = list(PGS_scaled = seq(-3, 3, by = 0.1)))
 rater_sex_pgs <- as.data.frame(rg)
@@ -131,7 +126,7 @@ rater_sex_pgs <- as.data.frame(rg)
 rater_sex_pgs$rater_type <- factor(rater_sex_pgs$rater_type, 
                         levels = c("m12", "v12", "t12", "ysr14"),
                         labels = c("Mother", "Father", "Teacher", "Self"))
-rater_sex_pgs$autism_score_ordinal <- factor(rater_sex_pgs$autism_score_ordinal,
+rater_sex_pgs$autism_score_ordinal_sensitivity <- factor(rater_sex_pgs$autism_score_ordinal_sensitivity,
                                    levels = c(1, 2, 3),
                                    labels = c("No", "Low", "High"))
 rater_sex_pgs$sex <- factor(rater_sex_pgs$sex, 
@@ -141,8 +136,8 @@ rater_sex_pgs$sex <- factor(rater_sex_pgs$sex,
 # 2. Plot with Sex and Score Level together
 ggplot(rater_sex_pgs, aes(x = PGS_scaled, y = prob, 
                color = sex, 
-               linetype = autism_score_ordinal,
-               group = interaction(autism_score_ordinal, sex))) +
+               linetype = autism_score_ordinal_sensitivity,
+               group = interaction(autism_score_ordinal_sensitivity, sex))) +
   # Confidence intervals 
   geom_ribbon(aes(ymin = asymp.LCL, ymax = asymp.UCL, fill = as.factor(sex)), 
               alpha = 0.1, color = NA, show.legend = FALSE) +
@@ -164,16 +159,16 @@ ggplot(rater_sex_pgs, aes(x = PGS_scaled, y = prob,
         legend.box = "vertical")
 
 # save plot
-ggsave("results/figures/pred_prob_three_way_interaction.tiff", device = "tiff", width = 8.4, height = 10, units = "cm", dpi = 600, scale = 2)
+ggsave("results/figures/sensitivity/pred_prob_three_way_interaction_sensitivity.tiff", device = "tiff", width = 8.4, height = 10, units = "cm", dpi = 600, scale = 2)
 
 # 3. Plot for high score only as this is relevant considering an autism diagnosis is based on "high scores"
 # filtering on only high score
-rater_sex_pgs_high <- subset(rater_sex_pgs, autism_score_ordinal == "High")
+rater_sex_pgs_high <- subset(rater_sex_pgs, autism_score_ordinal_sensitivity == "High")
 
 ggplot(rater_sex_pgs_high, aes(x = PGS_scaled, y = prob, 
                color = as.factor(sex), 
-               linetype = autism_score_ordinal,
-               group = interaction(autism_score_ordinal, sex))) +
+               linetype = autism_score_ordinal_sensitivity,
+               group = interaction(autism_score_ordinal_sensitivity, sex))) +
   # Confidence intervals (optional: can get messy with too many lines)
   geom_ribbon(aes(ymin = asymp.LCL, ymax = asymp.UCL, fill = as.factor(sex)), 
               alpha = 0.1, color = NA, show.legend = FALSE) +
@@ -193,7 +188,7 @@ ggplot(rater_sex_pgs_high, aes(x = PGS_scaled, y = prob,
   theme(legend.position = "bottom", 
         legend.box = "vertical")
 
-ggsave("results/figures/pred_prob_three_way_interaction_high_only.tiff", device = "tiff", width = 8.4, height = 10, units = "cm", dpi = 600, scale = 2)
+ggsave("results/figures/sensitivity/pred_prob_three_way_interaction_high_only_sensitivity.tiff", device = "tiff", width = 8.4, height = 10, units = "cm", dpi = 600, scale = 2)
 
 
 # --- Forest plot of Odds Ratios for main and interaction effects ---
@@ -284,5 +279,5 @@ ggplot(plot_data_clean, aes(x = estimate, y = term)) +
        y = NULL)
 
 # save the figure
-ggsave("results/figures/odds_ratios_forest_plot_three_way.tiff", device = "tiff", width = 8.4, height = 12, units = "cm", dpi = 600, scale = 2)
+ggsave("results/figures/sensitivity/odds_ratios_forest_plot_three_way_sensitivity.tiff", device = "tiff", width = 8.4, height = 12, units = "cm", dpi = 600, scale = 2)
 

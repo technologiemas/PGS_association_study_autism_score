@@ -3,6 +3,7 @@ gc()
 
 library(ordinal)
 library(car)
+library(performance)
 
 fit_m1 <- readRDS("results/models/fit_m1_clmm.rds")
 fit_m2 <- readRDS("results/models/fit_m2_clmm.rds")
@@ -10,6 +11,14 @@ fit_m3 <- readRDS("results/models/fit_m3_clmm.rds")
 fit_m4 <- readRDS("results/models/fit_m4_clmm.rds")
 fit_m4b <- readRDS("results/models/fit_m4b_clmm.rds")
 fit_m5 <- readRDS("results/models/fit_m5_clmm.rds")
+
+# uncomment these to see results of sensitivity analysis models
+# fit_m1 <- readRDS("results/models/sensitivity/fit_m1_clmm_sensitivity.rds")
+# fit_m2 <- readRDS("results/models/sensitivity/fit_m2_clmm_sensitivity.rds")
+# fit_m3 <- readRDS("results/models/sensitivity/fit_m3_clmm_sensitivity.rds")
+# fit_m4 <- readRDS("results/models/sensitivity/fit_m4_clmm_sensitivity.rds")
+# fit_m5 <- readRDS("results/models/sensitivity/fit_m5_clmm_sensitivity.rds")
+
 
 # --- MODEL SUMMARIES ---
 # summary(fit_m1)
@@ -32,10 +41,14 @@ table(mf$sex, mf$rater_type)
 table(mf$sex, mf$rater_type, mf$autism_score_ordinal)
 
 # collinearity checks
+check_collinearity(fit_m2) # without interaction terms as VIF will be unreliable because of these
+# results look fine
 check_collinearity(fit_m3)
 check_collinearity(fit_m4)
-check_collinearity(fit_m4b)
-check_collinearity(fit_m5)
+
+car::vif(fit_m2) # results with this package look fine too
+car::vif(fit_m3)
+car::vif(fit_m4)
 
 # chisq of each predictor in best fitting models
 Anova(fit_m3) 

@@ -12,9 +12,9 @@ library(psych)
 
 data = readRDS("data/processed/02_full_dataset_clean.rds")
 data_long = readRDS("data/processed/02_full_dataset_long.rds")
-length(data$FISNumber[data$sex == "FEMALE"])
 
-# --- distribution of data ---
+
+# --- distribution of phenotype and PGS data ---
 
 shapiro.test(sample(data_long$autism_score[data_long$`rater_type` == "m12"], 2000)) # result: not normally distributed
 shapiro.test(sample(data_long$autism_score[data_long$`rater_type` == "v12"], 2000)) # result: not normally distributed
@@ -117,8 +117,10 @@ cor_matrix_males = cor(select(data_wide, m12_aut_sum_MALE, v12_aut_sum_MALE, t12
 data_overlap = data %>%
   filter(!is.na(m12_aut_sum) & !is.na(v12_aut_sum) & !is.na(t12_aut_sum) & !is.na(ysr14_aut_sum))
 
+data_overlap_no_father = data %>%
+  filter(!is.na(m12_aut_sum) & !is.na(t12_aut_sum) & !is.na(ysr14_aut_sum))
 
-# --- save results ---
+# --- show / save results ---
 
 descriptives_phenotype <- calculate_descriptives_phenotype(data_long, `autism_score`)
 descriptives_genotype <- calculate_descriptives_genotype(data, `P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1`)
@@ -129,9 +131,23 @@ descriptives_genotype
 cor_matrix_females
 cor_matrix_males
 
-nrow(data_overlap[data_overlap$sex == "MALE", ]) # overlap sample males
-nrow(data_overlap[data_overlap$sex == "FEMALE", ]) # overlap sample females
+nrow(data_overlap[data_overlap$sex == "MALE", ]) # overlap sample males: 414
+nrow(data_overlap[data_overlap$sex == "FEMALE", ]) # overlap sample females: 624
+
+nrow(data_overlap_no_father[data_overlap_no_father$sex == "MALE", ]) # overlap sample: 490
+nrow(data_overlap_no_father[data_overlap_no_father$sex == "FEMALE", ]) # overlap sample: 753
+
+# append descriptives with data_overlap
+descriptives_phenotype = descriptives_phenotype %>%
+  bind_rows(
+    data.frame(
+      rater_type = "overlap all raters",
+      sex = c("MALE", "FEMALE"),
+      n = c(nrow(data_overlap[data_overlap$sex == "MALE", ]), nrow(data_overlap[data_overlap$sex == "FEMALE", ]))))
+
 
 # save descriptives
 write.csv(descriptives_phenotype, "results/descriptives_phenotype.csv", row.names = FALSE)
 write.csv(descriptives_genotype, "results/descriptives_genotype.csv", row.names = FALSE)
+write.csv(cor_matrix_females, "results/correlation_matrix_females.csv", row.names = TRUE)
+write.csv(cor_matrix_males, "results/correlation_matrix_males.csv", row.names = TRUE)

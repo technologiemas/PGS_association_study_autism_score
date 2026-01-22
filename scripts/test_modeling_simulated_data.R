@@ -117,3 +117,6 @@ fit_m3ord <- clmm(as.formula(m3ord),
 )
 
 summary(fit_m3ord)
+
+
+# Results conclude residuals are not normally distributed, so we will proceed with ordinal models

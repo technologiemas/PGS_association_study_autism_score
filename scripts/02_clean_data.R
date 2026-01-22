@@ -18,7 +18,7 @@ labels <- lapply(data, function(x) attr(x, "label")) # explanation labels of the
 data = data %>%
   filter(EUR_1KG_Outlier == 0)  
 
-# drop rows with NA for all rater types
+# drop rows with NA for all rater types to clean it up a bit
 data <- data %>%
   filter(!if_all(c(m12_aut_sum, v12_aut_sum, t12_aut_sum, ysr14_aut_sum), is.na))
 
@@ -30,6 +30,9 @@ data <- data %>%
 data$sex <- factor(as_factor(as.numeric(data$sex)), levels = c(1, 2), labels = c("MALE", "FEMALE"))
 data$genderlkrt12 <- factor(as_factor(as.numeric(data$genderlkrt12)), levels = c(1, 2), labels = c("MALE", "FEMALE"))
 
+# creating a check if all raters are present for this individual
+data <- data %>%
+  mutate(all_rater_present = ifelse(!is.na(m12_aut_sum) & !is.na(v12_aut_sum) & !is.na(t12_aut_sum) & !is.na(ysr14_aut_sum), 1, 0))
 
 # --- creating separate datasets for each rater ---
 create_rater_dataset <- function(data, filter_col, pheno_cols_general, geno_cols_general, pheno_cols_rater, sum_col) {
@@ -76,6 +79,14 @@ score_long <- data %>%
     names_pattern = "(.*)_aut_sum"
   ) 
 
+score_long_sensitivity <- data %>%
+  pivot_longer(
+    cols = ends_with("_aut_sum_sensitivity"),
+    names_to = "rater_type",
+    values_to = "autism_score_sensitivity",
+    names_pattern = "(.*)_aut_sum_sensitivity"
+  )
+
 # Step 3: Match age_key to rater_type
 # Define a lookup table for mapping age_key -> rater_type
 age_map <- tibble(
@@ -86,7 +97,8 @@ age_map <- tibble(
 # Join to attach rater_type to age values, deselect columns
 age_mapped <- left_join(age_long, age_map, by = "age_key")
 data_long <- left_join(age_mapped, score_long)
-data_long <- data_long %>% select(-age_key, -agem12, -agev12, -agetrf12, -ages14, -m12_aut_sum, -v12_aut_sum, -t12_aut_sum, -ysr14_aut_sum)
+data_long <- left_join(data_long, score_long_sensitivity)
+data_long <- data_long %>% select(-age_key, -agem12, -agev12, -agetrf12, -ages14, -m12_aut_sum, -v12_aut_sum, -t12_aut_sum, -ysr14_aut_sum, -m12_aut_sum_sensitivity, -v12_aut_sum_sensitivity, -t12_aut_sum_sensitivity, -ysr14_aut_sum_sensitivity)
 
 data_long$rater_type <- factor(data_long$rater_type)
 data_long <- data_long %>% filter(!is.na(autism_score)) # remove rows with NA in autism_score
@@ -94,6 +106,12 @@ data_long <- data_long %>% filter(!is.na(autism_score)) # remove rows with NA in
 # ordinalize autism score into three levels: 0, 1-3, 4+
 data_long = data_long %>%
   mutate(autism_score_ordinal = cut(autism_score,
+                                 breaks = c(-Inf, 1, 4, Inf),
+                                 labels = c("no", "mild", "high"),
+                                 right = FALSE)) 
+
+data_long = data_long %>%
+  mutate(autism_score_ordinal_sensitivity = cut(autism_score_sensitivity,
                                  breaks = c(-Inf, 1, 4, Inf),
                                  labels = c("no", "mild", "high"),
                                  right = FALSE)) 
