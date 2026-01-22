@@ -3,7 +3,7 @@ gc()
 library(haven)
 library(dplyr)
 library(stringr)
-source("scripts/00_column_names.R")
+source("scripts/_column_names.R")
 
 # loading in data
 phenotype_file_path = "./data/raw/PHE_20250516_5023_YJS.sav"

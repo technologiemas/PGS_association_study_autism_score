@@ -18,6 +18,8 @@ renv
 data/processed/measurement_invariance/*
 data/processed/*
 data/raw/*
+*.xlsx
+*.xls
 
 # output files (mostly MI stuff)
 *.out

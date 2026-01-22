@@ -4,7 +4,7 @@ gc()
 library(dplyr)
 library(tidyr)
 library(haven)
-source("scripts/00_column_names.R")
+source("scripts/_column_names.R")
 
 data = readRDS("data/processed/01_full_dataset.rds")
 

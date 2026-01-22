@@ -7,6 +7,7 @@ library(tidyr)
 library(haven)
 # library(rms)
 library(brant)
+source("scripts/_helper_functions.R")
 
 # --- LOAD DATA ---
 data_long = readRDS("data/processed/02_full_dataset_long.rds")
@@ -43,12 +44,11 @@ data_long = data_long %>%
   mutate(PLATFORM = haven::zap_labels(PLATFORM, rater_type, sex)) %>%
   mutate(across(c(PLATFORM, rater_type, sex, FISNumber, FamilyNumber), as.factor))
 
-# Convert autism ordinal to an ordered factor
-data_long$autism_score_ordinal <- factor(
-  data_long$autism_score_ordinal,
-  ordered = TRUE,
-  levels  = sort(unique(data_long$autism_score_ordinal))  # no, mild, high
-)
+# Rename column values and make them factors
+data_long$autism_score_ordinal = relable_wrapper(data_long$autism_score_ordinal)
+data_long$autism_score_ordinal_sensitivity = relable_wrapper(data_long$autism_score_ordinal_sensitivity)
+data_long$sex = relable_wrapper(data_long$sex)
+data_long$rater_type = relable_wrapper(data_long$rater_type)
 
 # check data types
 sapply(data_long, class)

@@ -19,14 +19,6 @@ colors = c("Male" = "#00C07B", "Female" = "#FFBB09")
 emm_rater_sex <- emmeans(fit_m3_linear, ~ sex | rater_type)
 rater_sex_df <- as.data.frame(emm_rater_sex)
 
-# Rename levels for plotting (Matches your original logic)
-rater_sex_df <- rater_sex_df %>%
-  mutate(
-    rater_type = factor(rater_type, levels = c("m12", "v12", "t12", "ysr14"), 
-                        labels = c("Mother", "Father", "Teacher", "Self")),
-    sex = factor(sex, levels = c("MALE", "FEMALE"), labels = c("Male", "Female"))
-  )
-
 # 2. Plot Predicted Means
 ggplot(rater_sex_df, aes(x = rater_type, y = emmean, color = sex, group = sex)) +
   geom_point(size = 3, position = position_dodge(width = 0.5)) +
@@ -47,14 +39,6 @@ ggsave("results/figures/linear/rater_sex_linear.tiff", device = "tiff", width = 
 rg <- emmeans(fit_m4_linear, ~ sex | PGS_scaled * rater_type, 
               at = list(PGS_scaled = seq(-3, 3, by = 0.1)))
 rater_sex_pgs <- as.data.frame(rg)
-
-rater_sex_pgs <- rater_sex_pgs %>%
-  mutate(
-    rater_type = factor(rater_type, levels = c("m12", "v12", "t12", "ysr14"),
-                        labels = c("Mother", "Father", "Teacher", "Self")),
-    sex = factor(sex, levels = c("MALE", "FEMALE"), labels = c("Male", "Female"))
-  )
-
 
 # 2. Plotting the slopes
 ggplot(rater_sex_pgs, aes(x = PGS_scaled, y = emmean, color = sex, fill = sex)) +

@@ -5,34 +5,9 @@ library(ordinal)
 library(ggplot2)
 library(emmeans)
 library(dplyr)
+source("scripts/_helper_functions.R")
 
 colors <- c("Male" = "#00C07B", "Female" = "#FFBB09") # set colors for the plots
-
-
-# helper functions
-relabel_rater <- function(x) {
-  factor(
-    x,
-    levels = c("m12", "v12", "t12", "ysr14"),
-    labels = c("Mother", "Father", "Teacher", "Self")
-  )
-}
-
-relabel_sex <- function(x) {
-  factor(
-    x,
-    levels = c("MALE", "FEMALE"),
-    labels = c("Male", "Female")
-  )
-}
-
-relabel_autism_score <- function(x) {
-  factor(
-    x,
-    levels = c(1, 2, 3),
-    labels = c("No", "Low", "High")
-  )
-}
 
 
 # calculate emmeans and contrasts for two way interaction
@@ -47,9 +22,9 @@ get_rater_sex_emmeans <- function(model_fit, outcome_var = "autism_score_ordinal
 
   probs <- as.data.frame(emm) %>%
     mutate(
-      rater_type = relabel_rater(rater_type),
-      sex = relabel_sex(sex),
-      autism_score_ordinal = relabel_autism_score(get(outcome_var))
+      rater_type = rater_type,
+      sex = sex,
+      autism_score_ordinal = get(outcome_var)
     )
 
   contr <- contrast(
@@ -65,8 +40,8 @@ get_rater_sex_emmeans <- function(model_fit, outcome_var = "autism_score_ordinal
       lower = estimate - 1.96 * SE,
       upper = estimate + 1.96 * SE,
       diff_prob = estimate,
-      rater_type = relabel_rater(rater_type),
-      autism_score_ordinal = relabel_autism_score(get(outcome_var))
+      rater_type = rater_type,
+      autism_score_ordinal = get(outcome_var)
     )
 
   list(
@@ -113,7 +88,7 @@ plot_pairwise_contrasts_rater_sex <- function(contr_df, model_label, outcome_var
     contr_df,
     aes(
       x = diff_prob,
-      y = factor(rater_type, levels = c("Self", "Teacher", "Father", "Mother"))
+      y = rater_type
     )
   ) +
     geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
@@ -148,9 +123,9 @@ get_three_way_emmeans <- function(model_fit, pgs_range = seq(-3, 3, 0.1), outcom
 
   as.data.frame(emm) %>%
     mutate(
-      rater_type = relabel_rater(rater_type),
-      sex = relabel_sex(sex),
-      !!outcome_var := relabel_autism_score(.data[[outcome_var]])
+      rater_type = rater_type,
+      sex = sex,
+      !!outcome_var := get(outcome_var)
     )
 }
 
@@ -299,19 +274,19 @@ p_m4_forest_sensitivity_all_raters <- plot_forest_odds_ratios(fit_m4_sensitivity
 
 # save plots
 
-ggsave(
-  "results/figures/pred_prob_rater_sex.tiff",
-  p_m3_prob,
-  device = "tiff",
-  width = 8.4, height = 6, units = "cm",
-  dpi = 600, scale = 2
-)
+# ggsave(
+#   "results/figures/pred_prob_rater_sex.tiff",
+#   p_m3_prob,
+#   device = "tiff",
+#   width = 8.4, height = 6, units = "cm",
+#   dpi = 600, scale = 2
+# )
 
-ggsave(
-  "results/figures/pairwise_contrast_rater_sex.tiff",
-  p_m3_contr,
-  device = "tiff",
-  width = 8.4, height = 6, units = "cm",
-  dpi = 600, scale = 2
-)
+# ggsave(
+#   "results/figures/pairwise_contrast_rater_sex.tiff",
+#   p_m3_contr,
+#   device = "tiff",
+#   width = 8.4, height = 6, units = "cm",
+#   dpi = 600, scale = 2
+# )
 
