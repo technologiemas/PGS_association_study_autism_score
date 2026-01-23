@@ -1,5 +1,6 @@
 # --- SCRIPT 05: TESTING PGS DATA ---
-# which thresholded PGS is best associated with autism score
+# which thresholded PGS is best associated with autism score so that we can use it in further analysis?
+
 rm(list = ls(all = TRUE))
 gc()
 
@@ -25,12 +26,12 @@ all_pgs = genotype_data %>%
 # change colname FISNumber to FISnumber for consistency with phenotype data
 all_pgs = all_pgs %>% rename(FISNumber = FISnumber)
 
+# see correlation of all pgs in df
+correlations_pgs = cor(all_pgs)
+
 #scale all pgs
 all_pgs = all_pgs %>%
   mutate(across(everything(), ~ as.numeric(scale(.)), .names = "{col}_scaled"))
-
-# see correlation of all pgs in df
-correlations_pgs = cor(all_pgs)
 
 # rename PCs
 data_mother = data_mother %>%
@@ -80,7 +81,7 @@ data_mother$autism_score_ordinal <- factor(
 # --- MODELING ---
 library(ordinal)
 
-# function to run ordinal logistic regression for each pgs
+# function to run ordinal logistic regression for each pgs with covariates and random effect for family
 run_ordinal_logistic_regression = function(data, pgs_col) {
   formula = as.formula(paste("autism_score_ordinal ~", pgs_col, "+ (1 | FamilyNumber) + agem12_scaled + sex + PLATFORM + PC1_scaled + PC2_scaled + PC3_scaled + PC4_scaled + PC5_scaled + PC6_scaled + PC7_scaled + PC8_scaled + PC9_scaled + PC10_scaled"))
   model = clmm(formula, data = data, Hess = TRUE)
@@ -117,5 +118,14 @@ for (res in model_results) {
 }
 
 # save results
+dir.create("results/pgs_threshold_comparisons", showWarnings = FALSE)
+
 saveRDS(model_results, "results/pgs_threshold_comparisons/models.rds")
 saveRDS(pgs_coefficients, "results/pgs_threshold_comparisons/coefficients.rds")
+saveRDS(correlations_pgs, "results/pgs_threshold_comparisons/correlations_pgs.rds")
+
+# model_results = readRDS("results/pgs_threshold_comparisons/models.rds")
+pgs_coefficients = readRDS("results/pgs_threshold_comparisons/coefficients.rds")
+# correlations_pgs = readRDS("results/pgs_threshold_comparisons/correlations_pgs.rds")
+
+# conclusion: 

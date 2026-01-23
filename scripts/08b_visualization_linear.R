@@ -1,3 +1,6 @@
+# This script generates visualizations for linear models 
+# These need different plot types due to the nature of linear regression outputs.
+
 rm(list = ls(all = TRUE))
 gc()
 
@@ -13,6 +16,7 @@ fit_m3_linear <- readRDS("results/models/fit_m3_linear.rds")
 fit_m4_linear <- readRDS("results/models/fit_m4_linear.rds")
 
 colors = c("Male" = "#00C07B", "Female" = "#FFBB09")
+dir.create("results/figures/linear", showWarnings = FALSE, recursive = TRUE)
 
 # --- Two-way interaction: rater_type * sex ---
 # 1. Get Marginal Means (Predicted Scores)

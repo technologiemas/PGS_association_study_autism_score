@@ -1,3 +1,6 @@
+# This script calculates descriptive statistics and performs statistical tests
+# The statistics are not the correct way to do this actually so they are left out in the manuscript
+
 rm(list = ls(all = TRUE))
 gc()
 
@@ -137,7 +140,7 @@ nrow(data_overlap[data_overlap$sex == "FEMALE", ]) # overlap sample females: 624
 nrow(data_overlap_no_father[data_overlap_no_father$sex == "MALE", ]) # overlap sample: 490
 nrow(data_overlap_no_father[data_overlap_no_father$sex == "FEMALE", ]) # overlap sample: 753
 
-# append descriptives with data_overlap
+# append descriptives with data_overlap sample size
 descriptives_phenotype = descriptives_phenotype %>%
   bind_rows(
     data.frame(

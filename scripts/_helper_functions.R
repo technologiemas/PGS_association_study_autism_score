@@ -1,4 +1,4 @@
-
+# This script contains some helper functions to rename variables in the dataframes
 
 # helper functions
 relabel_rater <- function(x) {

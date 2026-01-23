@@ -26,24 +26,6 @@ data_long$sex <- factor(data_long$sex,
 
 
 
-
-# plot the distribution of the phenotype data
-ggplot(data, aes(x = m12_aut_sum)) +
-  geom_histogram(binwidth = 1) +
-  labs(title = "Distribution of mother aut sum", x = "m12_aut_sum", y = "Count") 
-
-
-# --- boxplots of phenotype data ---
-
-# box plot of all raters separated on sex with mean line instead of median
-ggplot(data_long, aes(x = sex, y = autism_score)) +
-  geom_boxplot(fatten = NULL) +
-  stat_summary(fun.y = mean, geom = "errorbar", aes(ymax = ..y.., ymin = ..y..),
-               width = 0.75, size = 1, linetype = "solid") +
-  facet_wrap(~ rater_type) +
-  theme(text = element_text(size = 20)) +   # larger font size
-  labs(title = "Autism Score by Rater Type and Sex",
-       subtitle = "Comparison of Female and Male Ratings")
        
 # ridgeline plot (histogram style)
 ggplot(data_long, aes(x = autism_score, y = rater_type, fill = sex)) +
@@ -113,6 +95,7 @@ ggplot(
   ) +
   theme(text = element_text(size = 20))
 
+ggsave("results/figures/autism_score_ordinal_barplot.png", width = 8, height = 6, dpi=600)
 
 # --- boxplots of genotype data ---
 
@@ -122,30 +105,23 @@ ggplot(data_long, aes(x = sex, y = P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1
   labs(title = "Genotype by Sex",
        subtitle = "Comparison of Female and Male Ratings")
 
+ggsave("results/figures/pgs_sex_boxplot.png", width = 6, height = 6, dpi=600)
 
 # within subject comparison of raters
 
 data_long$sub_cat = paste(data_long$FISNumber, data_long$sex)
 
-ggplot(data_long, aes(x=rater_type, y = autism_score)) +
-  geom_point(alpha = 0.5, group=sub_cat, color=sex) +
-  geom_line(alpha = 0.2, group=sub_cat, color=sex) +
+ggplot(data_long, aes(x=rater_type, y = autism_score, group=sub_cat, color=sex)) +
+  geom_point(alpha = 0.5) +
+  geom_line(alpha = 0.2) +
   theme(text = element_text(size = 20)) +   # larger font size
   labs(title = "Autism Scores by Rater Type",
        x = "Rater Type",
        y = "Autism Score")
+# this plot is completely chaotic and unusable 
 
 
-
-data_long = data_long %>% filter(rater_type == "m12" | rater_type == "ysr14")
-
-# jitter the geom_lines
-ggplot() +
-  geom_jitter(data=data_long, aes(x=rater_type, y=autism_score, group=FISNumber, color=sex), width=0.1, height=0, alpha=0.5) +
-  geom_line(data=data_long, aes(x=rater_type, y=autism_score, group=FISNumber, color=sex), alpha=0.5)
-
-
-# box plot of m12 and ysr14 separated on sex
+# box plot separated on sex with mean line instead of median
 ggplot(data_long, aes(x = rater_type, y = autism_score, fill = sex)) +
   geom_boxplot(position = position_dodge(0.8), fatten = NULL, width = 0.7) +
   stat_summary(fun.y = mean, geom = "errorbar", aes(ymax = ..y.., ymin = ..y.., group = sex),
@@ -156,21 +132,3 @@ ggplot(data_long, aes(x = rater_type, y = autism_score, fill = sex)) +
        x = "Rater Type",
        y = "Autism Score")
 
-
-# Filter data for those who have both m12 and ysr14 scores
-filtered_data <- data_long %>% 
-  filter(rater_type %in% c("m12", "ysr14")) %>% 
-  group_by(FISNumber) %>% 
-  filter(n() == 2) %>% 
-  ungroup()
-
-# Box plot for m12 and ysr14 separated by sex with mean line instead of median
-ggplot(filtered_data, aes(x = rater_type, y = autism_score, fill = sex)) +
-  geom_boxplot(position = position_dodge(0.8), fatten = NULL, width = 0.7) +
-  stat_summary(fun.y = mean, geom = "errorbar", aes(ymax = ..y.., ymin = ..y.., group = sex),
-               position = position_dodge(0.8),
-               width = 0.75, size = 1, linetype = "solid") +
-  theme(text = element_text(size = 20)) +   # larger font size
-  labs(title = "Autism Score Comparison between m12 and ysr14 by Sex",
-       x = "Rater Type",
-       y = "Autism Score")

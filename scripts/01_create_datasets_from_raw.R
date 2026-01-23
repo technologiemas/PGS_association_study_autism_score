@@ -1,3 +1,6 @@
+# This script creates the full dataset from the raw data files by selecting relevant columns,
+# Calculates autism sum scores for each rater (including sensitivity analysis sum scores without items 1 and 80)
+
 rm(list = ls(all = TRUE))
 gc()
 library(haven)

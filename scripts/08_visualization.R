@@ -1,3 +1,5 @@
+# This script creates visualizations based on the model results
+
 rm(list = ls(all = TRUE))
 gc()
 
@@ -273,6 +275,8 @@ p_m4_forest_sensitivity_all_raters <- plot_forest_odds_ratios(fit_m4_sensitivity
 
 
 # save plots
+
+dir.create("results/figures", showWarnings = FALSE)
 
 # ggsave(
 #   "results/figures/pred_prob_rater_sex.tiff",

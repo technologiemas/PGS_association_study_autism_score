@@ -1,5 +1,4 @@
-rm(list = ls(all = TRUE))
-gc()
+# This script contains the column names of the variables used in the analyses
 
 # wanted columns genotype data
 geno_cols_general = c("FISNumber",

@@ -1,3 +1,8 @@
+# This script does simulated data modeling to test model formulas for the main analyses
+# The ordinal model seems like the best fit, as the linear model violates assumptions of normality of residuals
+
+rm(list = ls(all = TRUE))
+gc()
 
 # step 0: baseline variance partition - random intercepts only
 m0 = "autism_score ~ (1 | FamilyNumber) + (1 | FISNumber)"

@@ -1,3 +1,6 @@
+# This script performs model comparisons for the ordinal regression models fitted in the previous script (06_modeling.R)
+# Determines the best fitting model(s) based on AIC and likelihood ratio tests, and checks model assumptions
+
 rm(list = ls(all = TRUE))
 gc()
 

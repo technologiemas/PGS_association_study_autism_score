@@ -1,3 +1,5 @@
+# This script cleans the data, creates a dataset for each rater type, and a long format dataset with all raters
+
 rm(list = ls(all = TRUE))
 gc()
 
@@ -34,7 +36,9 @@ data$genderlkrt12 <- factor(as_factor(as.numeric(data$genderlkrt12)), levels = c
 data <- data %>%
   mutate(all_rater_present = ifelse(!is.na(m12_aut_sum) & !is.na(v12_aut_sum) & !is.na(t12_aut_sum) & !is.na(ysr14_aut_sum), 1, 0))
 
+
 # --- creating separate datasets for each rater ---
+
 create_rater_dataset <- function(data, filter_col, pheno_cols_general, geno_cols_general, pheno_cols_rater, sum_col) {
   data %>%
     filter(.data[[filter_col]] == 1) %>%

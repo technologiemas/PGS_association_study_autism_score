@@ -1,3 +1,6 @@
+# This script performs post-hoc investigations on the fitted clmm models from the main analyses
+# Investigates two-way and three-way interaction effects using estimated marginal means and trends using the emmeans package
+
 rm(list = ls(all = TRUE))
 gc()
 
@@ -27,7 +30,6 @@ contrast_with_unadj <- function(emm_obj, ..., adjust = "fdr") {
   out <- as.data.frame(adj)
   out$p_unadjusted <- unadj$p.value
 
-  # Optional but recommended for clarity
   names(out)[names(out) == "p.value"] <- paste0("p_", adjust)
 
   out
@@ -118,6 +120,7 @@ post = lst_results(fit_m3, fit_m4, "autism_score_ordinal")
 post_sensitivity = lst_results(fit_m3_sensitivity, fit_m4_sensitivity, "autism_score_ordinal_sensitivity")
 post_sensitivity_all_raters = lst_results(fit_m3_sensitivity_all_raters, fit_m4_sensitivity_all_raters, "autism_score_ordinal_sensitivity")
 
+dir.create("results/post_hoc_investigations", showWarnings = FALSE, recursive = TRUE) # create directory if it doesn't exist
 openxlsx::write.xlsx(post, "results/post_hoc_investigations/post.xlsx") # save as xlsx
 openxlsx::write.xlsx(post_sensitivity, "results/post_hoc_investigations/post_sensitivity.xlsx") # save as xlsx
 openxlsx::write.xlsx(post_sensitivity_all_raters, "results/post_hoc_investigations/post_sensitivity_all_raters.xlsx") # save as xlsx

@@ -1,3 +1,6 @@
+# This script generates visualizations for bayesian models ordinal models
+# These need different plot types due to the nature of bayesian regression outputs.
+
 rm(list = ls(all = TRUE))
 gc()
 
@@ -11,6 +14,7 @@ library(bayestestR)
 fit_m4_bayesian <- readRDS("results/models/test_m4_bayes.rds")
 
 colors = c("Male" = "#00C07B", "Female" = "#FFBB09")
+dir.create("results/figures/bayesian", showWarnings = FALSE, recursive = TRUE)
 
 # model interactions: PGS_scaled * rater_type + PGS_scaled * sex + sex * rater_type
 
