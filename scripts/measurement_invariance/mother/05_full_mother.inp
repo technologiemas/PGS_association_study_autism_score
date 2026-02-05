@@ -1,6 +1,6 @@
 TITLE: Full model mother;
 DATA: 
-    file = ../../data/processed/measurement_invariance/item_data_mother.dat;
+    file = ../../../data/processed/measurement_invariance/item_data_mother.dat;
     FORMAT = FREE;
 
 VARIABLE:

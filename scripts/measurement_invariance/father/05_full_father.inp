@@ -1,6 +1,6 @@
 TITLE: Full model father;
 DATA: 
-    file = ../../data/processed/measurement_invariance/item_data_father.dat;
+    file = ../../../data/processed/measurement_invariance/item_data_father.dat;
     FORMAT = FREE;
 
 VARIABLE:

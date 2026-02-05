@@ -17,14 +17,6 @@ data_teacher = readRDS("data/processed/02_data_teacher_clean.rds")
 
 # colors to use for the sexes
 colors = c("Male" = "#00C07B", "Female" = "#FFBB09")
-data_long$rater_type <- factor(data_long$rater_type, 
-                  levels = c("m12", "v12", "t12", "ysr14"), 
-                  labels = c("Mother", "Father", "Teacher", "Self"))
-data_long$sex <- factor(data_long$sex, 
-                 levels = c("MALE", "FEMALE"), 
-                 labels = c("Male", "Female"))
-
-
 
        
 # ridgeline plot (histogram style)

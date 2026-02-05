@@ -13,20 +13,21 @@ colors <- c("Male" = "#00C07B", "Female" = "#FFBB09") # set colors for the plots
 
 
 # calculate emmeans and contrasts for two way interaction
-get_rater_sex_emmeans <- function(model_fit, outcome_var = "autism_score_ordinal") {
+get_rater_sex_emmeans <- function(model_fit, outcome_var) {
 
   emm <- emmeans(
     model_fit,
     as.formula(paste("~ sex *", outcome_var, "| rater_type")),
     mode = "prob",
-    cov.reduce = mean
+    # at = list(PGS = 2), # uncomment to predict at a specific PGS value (e.g., 2 SDs above the mean). This is clinically relevant as it represents individuals with a high genetic liability for autism. If left commented, the predictions will be made at the mean PGS (PGS = 0).
+    cov.reduce = mean # takes a mean of covariates for prediction, including PGS
   )
 
   probs <- as.data.frame(emm) %>%
     mutate(
       rater_type = rater_type,
       sex = sex,
-      autism_score_ordinal = get(outcome_var)
+      !!outcome_var := get(outcome_var)
     )
 
   contr <- contrast(
@@ -43,7 +44,7 @@ get_rater_sex_emmeans <- function(model_fit, outcome_var = "autism_score_ordinal
       upper = estimate + 1.96 * SE,
       diff_prob = estimate,
       rater_type = rater_type,
-      autism_score_ordinal = get(outcome_var)
+      !!outcome_var := get(outcome_var)
     )
 
   list(
@@ -55,7 +56,7 @@ get_rater_sex_emmeans <- function(model_fit, outcome_var = "autism_score_ordinal
 
 # --- rater_type * sex plots ---
 
-plot_pred_prob_rater_sex <- function(probs_df, model_label, outcome_var = "autism_score_ordinal") {
+plot_pred_prob_rater_sex <- function(probs_df, model_label, outcome_var) {
 
   ggplot(
     probs_df,
@@ -84,7 +85,7 @@ plot_pred_prob_rater_sex <- function(probs_df, model_label, outcome_var = "autis
     theme(legend.position = "top")
 }
 
-plot_pairwise_contrasts_rater_sex <- function(contr_df, model_label, outcome_var = "autism_score_ordinal") {
+plot_pairwise_contrasts_rater_sex <- function(contr_df, model_label, outcome_var) {
 
   ggplot(
     contr_df,
@@ -114,7 +115,7 @@ plot_pairwise_contrasts_rater_sex <- function(contr_df, model_label, outcome_var
 # --- three way interaction plots ---
 
 
-get_three_way_emmeans <- function(model_fit, pgs_range = seq(-3, 3, 0.1), outcome_var = "autism_score_ordinal") {
+get_three_way_emmeans <- function(model_fit, pgs_range = seq(-3, 3, 0.1), outcome_var ) {
 
   emm <- emmeans(
     model_fit,
@@ -131,7 +132,7 @@ get_three_way_emmeans <- function(model_fit, pgs_range = seq(-3, 3, 0.1), outcom
     )
 }
 
-plot_three_way <- function(df, model_label, outcome_var = "autism_score_ordinal") {
+plot_three_way <- function(df, model_label, outcome_var) {
 
   ggplot(
     df,
@@ -163,7 +164,7 @@ plot_three_way <- function(df, model_label, outcome_var = "autism_score_ordinal"
     theme(legend.position = "bottom")
 }
 
-plot_three_way_high_only <- function(df, model_label, outcome_var = "autism_score_ordinal") {
+plot_three_way_high_only <- function(df, model_label, outcome_var) {
 
   df_high <- subset(df, get(outcome_var) == "High")
 
@@ -293,4 +294,6 @@ dir.create("results/figures", showWarnings = FALSE)
 #   width = 8.4, height = 6, units = "cm",
 #   dpi = 600, scale = 2
 # )
+
+
 

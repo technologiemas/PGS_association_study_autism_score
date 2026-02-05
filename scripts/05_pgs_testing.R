@@ -125,7 +125,7 @@ saveRDS(pgs_coefficients, "results/pgs_threshold_comparisons/coefficients.rds")
 saveRDS(correlations_pgs, "results/pgs_threshold_comparisons/correlations_pgs.rds")
 
 # model_results = readRDS("results/pgs_threshold_comparisons/models.rds")
-pgs_coefficients = readRDS("results/pgs_threshold_comparisons/coefficients.rds")
+# pgs_coefficients = readRDS("results/pgs_threshold_comparisons/coefficients.rds")
 # correlations_pgs = readRDS("results/pgs_threshold_comparisons/correlations_pgs.rds")
 
-# conclusion: 
+# conclusion: they are very similar, we pick p_0_1 

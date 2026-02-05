@@ -4,25 +4,36 @@
 rm(list = ls(all = TRUE))
 gc()
 
-# library(ggplot2)
 library(dplyr)
 library(moments)
-# library(bestNormalize)
-# library(pscl)
 library(tidyr)
-# library(ggpubr)
 library(psych)
+library(openxlsx)
 
 data = readRDS("data/processed/02_full_dataset_clean.rds")
 data_long = readRDS("data/processed/02_full_dataset_long.rds")
 
 
+# --- distribution of age in the sample ---
+
+data_mother = data_long %>%
+filter(rater_type == "Mother")
+
+data_self = data_long %>%
+filter(rater_type == "Self")
+
+hist(data_mother$age)
+hist(data_self$age, breaks = 30)
+table(data_mother$age)
+table(data_self$age)
+
+
 # --- distribution of phenotype and PGS data ---
 
-shapiro.test(sample(data_long$autism_score[data_long$`rater_type` == "m12"], 2000)) # result: not normally distributed
-shapiro.test(sample(data_long$autism_score[data_long$`rater_type` == "v12"], 2000)) # result: not normally distributed
-shapiro.test(sample(data_long$autism_score[data_long$`rater_type` == "t12"], 2000)) # result: not normally distributed
-shapiro.test(sample(data_long$autism_score[data_long$`rater_type` == "ysr14"], 2000)) # result: not normally distributed
+shapiro.test(sample(data_long$autism_score[data_long$`rater_type` == "Mother"], 2000)) # result: not normally distributed
+shapiro.test(sample(data_long$autism_score[data_long$`rater_type` == "Father"], 2000)) # result: not normally distributed
+shapiro.test(sample(data_long$autism_score[data_long$`rater_type` == "Teacher"], 2000)) # result: not normally distributed
+shapiro.test(sample(data_long$autism_score[data_long$`rater_type` == "Self"], 2000)) # result: not normally distributed
 
 shapiro.test(sample(data$P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1, 2000)) # result: normally distributed
 
@@ -92,10 +103,13 @@ calculate_descriptives_genotype <- function(data, PGS) {
       cohen_d = cohen.d({{PGS}} ~ `sex`, data = cur_data())$cohen.d[2],
     )
 
+  pgs_str = sub(".*_LDp1", "", deparse(substitute(PGS)))
+
   # calculate descriptives for each rater type and sex
   descriptives <- data %>%
     group_by(`sex`) %>%
     summarise(
+      name = paste0("PGS", pgs_str),
       n         = sum(!is.na({{PGS}})),
       mean      = mean({{PGS}}, na.rm = TRUE),
       sd        = sd({{PGS}},   na.rm = TRUE),
@@ -115,6 +129,7 @@ data_wide = data %>%
 
 cor_matrix_females = cor(select(data_wide, m12_aut_sum_FEMALE, v12_aut_sum_FEMALE, t12_aut_sum_FEMALE, ysr14_aut_sum_FEMALE), use = "pairwise.complete.obs")
 cor_matrix_males = cor(select(data_wide, m12_aut_sum_MALE, v12_aut_sum_MALE, t12_aut_sum_MALE, ysr14_aut_sum_MALE), use = "pairwise.complete.obs")
+cor_all = cor(select(data, m12_aut_sum, v12_aut_sum, t12_aut_sum, ysr14_aut_sum), use = "pairwise.complete.obs")
 
 # count the number of individuals for which each rater type is available for that individual
 data_overlap = data %>%
@@ -127,30 +142,49 @@ data_overlap_no_father = data %>%
 
 descriptives_phenotype <- calculate_descriptives_phenotype(data_long, `autism_score`)
 descriptives_genotype <- calculate_descriptives_genotype(data, `P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1`)
+data$P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1_scaled <- scale(data$P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1)
+descriptives_genotype_scaled <- calculate_descriptives_genotype(data, `P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1_scaled`)
 
-descriptives_phenotype
-descriptives_genotype
+# descriptives_phenotype
+# descriptives_genotype
 
-cor_matrix_females
-cor_matrix_males
+# cor_matrix_females
+# cor_matrix_males
 
-nrow(data_overlap[data_overlap$sex == "MALE", ]) # overlap sample males: 414
-nrow(data_overlap[data_overlap$sex == "FEMALE", ]) # overlap sample females: 624
+# nrow(data_overlap[data_overlap$sex == "Male", ]) # overlap sample males: 414
+# nrow(data_overlap[data_overlap$sex == "Female", ]) # overlap sample females: 624
 
-nrow(data_overlap_no_father[data_overlap_no_father$sex == "MALE", ]) # overlap sample: 490
-nrow(data_overlap_no_father[data_overlap_no_father$sex == "FEMALE", ]) # overlap sample: 753
+# nrow(data_overlap_no_father[data_overlap_no_father$sex == "Male", ]) # overlap sample: 490
+# nrow(data_overlap_no_father[data_overlap_no_father$sex == "Female", ]) # overlap sample: 753
 
 # append descriptives with data_overlap sample size
 descriptives_phenotype = descriptives_phenotype %>%
   bind_rows(
     data.frame(
       rater_type = "overlap all raters",
-      sex = c("MALE", "FEMALE"),
-      n = c(nrow(data_overlap[data_overlap$sex == "MALE", ]), nrow(data_overlap[data_overlap$sex == "FEMALE", ]))))
+      sex = c("Male", "Female"),
+      n = c(nrow(data_overlap[data_overlap$sex == "Male", ]), nrow(data_overlap[data_overlap$sex == "Female", ]))))
 
 
-# save descriptives
-write.csv(descriptives_phenotype, "results/descriptives_phenotype.csv", row.names = FALSE)
-write.csv(descriptives_genotype, "results/descriptives_genotype.csv", row.names = FALSE)
-write.csv(cor_matrix_females, "results/correlation_matrix_females.csv", row.names = TRUE)
-write.csv(cor_matrix_males, "results/correlation_matrix_males.csv", row.names = TRUE)
+# --- collect results ---
+
+lst_correlations = list(
+  cor_all = cor_all,
+  cor_matrix_females = cor_matrix_females,
+  cor_matrix_males   = cor_matrix_males
+)
+# append descriptives_genotype_scaled to descriptives_genotype
+descriptives_genotype = descriptives_genotype %>%
+  bind_rows(
+    descriptives_genotype_scaled %>%
+      mutate(p_value = NA, cohen_d = NA)
+  )
+
+lst_descriptives = list(
+  descriptives_phenotype = descriptives_phenotype,
+  descriptives_genotype = descriptives_genotype
+)
+
+# save files
+openxlsx::write.xlsx(lst_correlations, "results/correlation_matrices.xlsx", rowNames = FALSE)
+openxlsx::write.xlsx(lst_descriptives, "results/descriptives.xlsx", rowNames = FALSE)

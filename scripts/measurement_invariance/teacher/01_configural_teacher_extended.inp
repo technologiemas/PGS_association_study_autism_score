@@ -1,6 +1,6 @@
 TITLE: Configural model teacher;
 DATA: 
-    file = ../../data/processed/measurement_invariance/item_data_teacher.dat;
+    file = ../../../data/processed/measurement_invariance/item_data_teacher.dat;
     FORMAT = FREE;
 
 VARIABLE:
@@ -28,16 +28,8 @@ MODEL:
 
   ! thresholds for male: estimated freely but we label 
   !them so they can be referenced in female
-  [item1$1] (t11);   [item1$2] (t12_ref);   ! item1 is the reference item 
-  [item2$1] (t21);   [item2$2] (t22);
-  [item3$1] (t31);   [item3$2] (t32);
-  [item4$1] (t41);   [item4$2] (t42);
-  [item5$1] (t51);   [item5$2] (t52);
-  [item6$1] (t61);   [item6$2] (t62);
-  [item7$1] (t71);   [item7$2] (t72);
-  [item8$1] (t81);   [item8$2] (t82);
-  [item9$1] (t91);   [item9$2] (t92);
-  [item10$1] (t101);   [item10$2] (t102);
+  [item1$1-item10$1] (ta1-ta10);
+  [item1$2-item10$2] (tb1-tb10);
 
   ! residual variances: fixed to 1 in male 
   item1@1 (e1);
@@ -63,21 +55,14 @@ MODEL female:
   ! factor variance fixed to 1 in female as required
   F@1;
 
-  ! Threshold constraints for female:
-  ! - first threshold for each item constrained equal to male:
-  ! - second threshold: for item1 (reference) constrained to
-  ! male' second threshold (t12_ref)
-  !   all other second thresholds estimated freely in female 
-  [item1$1] (t11);   [item1$2] (t12_ref);  
-  [item2$1] (t21);   [item2$2];
-  [item3$1] (t31);   [item3$2];
-  [item4$1] (t41);   [item4$2];
-  [item5$1] (t51);   [item5$2];
-  [item6$1] (t61);   [item6$2];
-  [item7$1] (t71);   [item7$2];
-  [item8$1] (t81);   [item8$2];
-  [item9$1] (t91);   [item9$2];
-  [item10$1] (t101);   [item10$2];
+  ! constrain all first thresholds equal with males
+  [item1$1-item10$1] (ta1-ta10);
+  
+! constrain the second threshold of the reference item (4)
+[item4$2] (tb4);
+
+! free all other second thresholds
+[item1$2-item3$2 item5$2-item10$2];
 
   ! Residual variances: estimated freely in female 
   item1-item10*;

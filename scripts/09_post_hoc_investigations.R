@@ -124,3 +124,12 @@ dir.create("results/post_hoc_investigations", showWarnings = FALSE, recursive = 
 openxlsx::write.xlsx(post, "results/post_hoc_investigations/post.xlsx") # save as xlsx
 openxlsx::write.xlsx(post_sensitivity, "results/post_hoc_investigations/post_sensitivity.xlsx") # save as xlsx
 openxlsx::write.xlsx(post_sensitivity_all_raters, "results/post_hoc_investigations/post_sensitivity_all_raters.xlsx") # save as xlsx
+
+a = emtrends(
+    fit_m4,
+    ~ rater_type | sex,
+    var = "PGS_scaled",
+    mode = "latent"
+  )
+
+contrast(a, method = "pairwise", by = "sex", adjust = "tukey")

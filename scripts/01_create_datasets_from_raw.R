@@ -41,7 +41,7 @@ data <- data %>%
 
 # FUNCTION that sums the individual items into an autism scale
 create_autism_score = function(data, items, in_questionnaire, col_name) {
- # calculate autism scores according to So. et al., 2013
+ # calculate autism scores according to the ten ASEBA items from So. et al., 2013
   threshold = 2 # maximum number of missing items allowed to still calculate the sum score
 
   # create a new column with col name that sums the autism scale items

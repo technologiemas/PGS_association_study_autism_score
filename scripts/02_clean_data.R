@@ -12,29 +12,46 @@ data = readRDS("data/processed/01_full_dataset.rds")
 
 
 # --- exploring the data ---
-labels <- lapply(data, function(x) attr(x, "label")) # explanation labels of the columns
+labels <- lapply(data, function(x) attr(x, "label")) # explanation of spss labels of the columns
+
+data = zap_labels(data)
+
 
 # --- cleaning the data ---
-
-# filter out people not of european ancestry
+# filter out people older than 16 for the YSR. has to be done with mutate to not drop entire rows
 data = data %>%
-  filter(EUR_1KG_Outlier == 0)  
+  mutate(
+    ysr14_aut_sum = if_else(ages14 >= 16, NA_real_, ysr14_aut_sum),
+    ysr14_aut_sum_sensitivity = if_else(ages14 >= 16, NA_real_, ysr14_aut_sum_sensitivity)
+  )
 
-# drop rows with NA for all rater types to clean it up a bit
+data = data %>%
+  filter(
+    EUR_1KG_Outlier == 0, # filter out people not of european ancestry
+    !if_all(c(m12_aut_sum, v12_aut_sum, t12_aut_sum, ysr14_aut_sum), is.na), # drop rows with NA for all rater types to clean it up a bit
+    !is.na(sex), # drop participants for which chromosomal sex is NA
+    )  
+
+# check sample size after filtering
+nrow(data)
+
+# set sex to Male and Female using enumeration in factors. set 1 to male and 2 to female
+data$sex <- factor(data$sex, levels = c(1, 2), labels = c("Male", "Female"))
+data$genderlkrt12 <- factor(data$genderlkrt12, levels = c(1, 2), labels = c("Male", "Female"))
+
+# set datatypes of relevant variables to factors
 data <- data %>%
-  filter(!if_all(c(m12_aut_sum, v12_aut_sum, t12_aut_sum, ysr14_aut_sum), is.na))
+  mutate(across(c(PLATFORM, sex, FISNumber, FamilyNumber), as.factor))
 
-# drop rows with NA for sex
 data <- data %>%
-  filter(!is.na(sex))
-
-# set sex to MALE and FEMALE using enumeration. set 1 to male and 2 to female
-data$sex <- factor(as_factor(as.numeric(data$sex)), levels = c(1, 2), labels = c("MALE", "FEMALE"))
-data$genderlkrt12 <- factor(as_factor(as.numeric(data$genderlkrt12)), levels = c(1, 2), labels = c("MALE", "FEMALE"))
+  mutate(across(contains("aut_sum"), as.integer))
 
 # creating a check if all raters are present for this individual
 data <- data %>%
-  mutate(all_rater_present = ifelse(!is.na(m12_aut_sum) & !is.na(v12_aut_sum) & !is.na(t12_aut_sum) & !is.na(ysr14_aut_sum), 1, 0))
+  mutate(all_rater_present = ifelse(!is.na(m12_aut_sum) & !is.na(v12_aut_sum) & !is.na(t12_aut_sum) & !is.na(ysr14_aut_sum), TRUE, FALSE))
+
+# check data types
+sapply(data, class)
 
 
 # --- creating separate datasets for each rater ---
@@ -104,7 +121,8 @@ data_long <- left_join(age_mapped, score_long)
 data_long <- left_join(data_long, score_long_sensitivity)
 data_long <- data_long %>% select(-age_key, -agem12, -agev12, -agetrf12, -ages14, -m12_aut_sum, -v12_aut_sum, -t12_aut_sum, -ysr14_aut_sum, -m12_aut_sum_sensitivity, -v12_aut_sum_sensitivity, -t12_aut_sum_sensitivity, -ysr14_aut_sum_sensitivity)
 
-data_long$rater_type <- factor(data_long$rater_type)
+data_long$rater_type <- factor(data_long$rater_type, levels = c("m12", "v12", "t12", "ysr14"), labels = c("Mother", "Father", "Teacher", "Self")) # convert rater_type to factor
+
 data_long <- data_long %>% filter(!is.na(autism_score)) # remove rows with NA in autism_score
 
 # ordinalize autism score into three levels: 0, 1-3, 4+
@@ -120,6 +138,10 @@ data_long = data_long %>%
                                  labels = c("no", "mild", "high"),
                                  right = FALSE)) 
 
+# check data types for data in long format
+sapply(data_long, class)
+
+
 # Save the datasets
 saveRDS(data_mother, "data/processed/02_data_mother_clean.rds")
 saveRDS(data_father, "data/processed/02_data_father_clean.rds")
@@ -128,4 +150,6 @@ saveRDS(data_ysr, "data/processed/02_data_ysr_clean.rds")
 saveRDS(data, "data/processed/02_full_dataset_clean.rds")
 saveRDS(data_long, "data/processed/02_full_dataset_long.rds")
 saveRDS(data_all_items, "data/processed/02_data_all_items.rds")
+
+
 

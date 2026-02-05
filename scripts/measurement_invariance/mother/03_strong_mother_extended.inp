@@ -1,6 +1,6 @@
-TITLE: Strong model teacher;
+TITLE: Strong model mother;
 DATA: 
-    file = ../../../data/processed/measurement_invariance/item_data_teacher.dat;
+    file = ../../../data/processed/measurement_invariance/item_data_mother.dat;
     FORMAT = FREE;
 
 VARIABLE:
@@ -15,11 +15,11 @@ ANALYSIS:
   TYPE = COMPLEX;
   PARAMETERIZATION = THETA;    ! needed to estimate residual
 ! variances for categorical indicators
-  DIFFTEST = metric_model_teacher_extended.dat;
+  DIFFTEST = metric_model_mother_extended.dat;
 
 MODEL:
   F BY item1-item10* (L1-L10); ! constrained with female
-  item4 WITH item10;
+   item4 WITH item10;
   ! identification: factor mean fixed to zero in male
   [F@0];
 
@@ -53,7 +53,7 @@ MODEL:
 ! ---------- GROUP 2: FEMALE ----------
 MODEL female:
   F BY item1-item10* (L1-L10); ! constrained between the grouops
-  item4 WITH item10;
+   item4 WITH item10;
   ! factor mean is estimated freely in female
   [F];     
 
@@ -76,7 +76,7 @@ MODEL female:
   item1-item10*;
 
 SAVEDATA:
-  DIFFTEST = strong_model_teacher_extended.dat;
+  DIFFTEST = strong_model_mother_extended.dat;
 
 OUTPUT:
   MODINDICES(ALL, 20)

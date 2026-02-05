@@ -1,6 +1,6 @@
 TITLE: Full model teacher;
 DATA: 
-    file = ../../data/processed/measurement_invariance/item_data_teacher.dat;
+    file = ../../../data/processed/measurement_invariance/item_data_teacher.dat;
     FORMAT = FREE;
 
 VARIABLE:

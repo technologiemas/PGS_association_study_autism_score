@@ -1,6 +1,6 @@
 TITLE: Strong model self;
 DATA: 
-    file = ../../data/processed/measurement_invariance/item_data_self.dat;
+    file = ../../../data/processed/measurement_invariance/item_data_self.dat;
     FORMAT = FREE;
 
 VARIABLE:
