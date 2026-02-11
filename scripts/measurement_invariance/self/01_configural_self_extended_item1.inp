@@ -15,8 +15,9 @@ ANALYSIS:
   ESTIMATOR = WLSMV;
   TYPE = COMPLEX;
   PARAMETERIZATION = THETA;    ! needed to estimate residual
+  ! variances for categorical indicators
   DIFFTEST = configural_model_self.dat; ! compared with the normal model here
-! variances for categorical indicators
+
 
 MODEL:
   F BY item2-item9* (L2-L9); ! freely estimate
