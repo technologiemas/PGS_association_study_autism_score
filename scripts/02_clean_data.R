@@ -13,18 +13,42 @@ data = readRDS("data/processed/01_full_dataset.rds")
 
 # --- exploring the data ---
 labels <- lapply(data, function(x) attr(x, "label")) # explanation of spss labels of the columns
+data = zap_labels(data) # remove labels from the data to avoid issues with downstream analyses.
 
-data = zap_labels(data)
+# exploring item responses in the dataset. Looks good
+for (item in items_m12) {print(table(data[[item]]))}
+for (item in items_t12) {print(table(data[[item]]))}
+for (item in items_v12) {print(table(data[[item]]))}
+for (item in items_ysr14) {print(table(data[[item]]))}
 
 
 # --- cleaning the data ---
-# filter out people older than 16 for the YSR. has to be done with mutate to not drop entire rows
-data = data %>%
-  mutate(
-    ysr14_aut_sum = if_else(ages14 >= 16, NA_real_, ysr14_aut_sum),
-    ysr14_aut_sum_sensitivity = if_else(ages14 >= 16, NA_real_, ysr14_aut_sum_sensitivity)
-  )
 
+# filter out people older than 16 for the YSR. has to be done with mutate to not drop entire rows
+# data = data %>%
+#   mutate(
+#     ysr14_aut_sum = if_else(ages14 >= 16, NA_real_, ysr14_aut_sum),
+#     ysr14_aut_sum_sensitivity = if_else(ages14 >= 16, NA_real_, ysr14_aut_sum_sensitivity)
+#   )
+
+# mean(data$ages14, na.rm = TRUE) + 2 * sd(data$ages14, na.rm = TRUE)
+# table(data$ages14)
+# put age to NA for people with age more than 2 standard deviations from the mean for each rater type. has to be done with mutate to not drop entire rows
+# data <- data %>%
+#   mutate(
+#     across(
+#       c(agem12, agev12, agetrf12, ages14),
+#       ~ {
+#         m <- mean(.x, na.rm = TRUE)
+#         s <- sd(.x, na.rm = TRUE)
+#         if_else(.x <= (m - 2*s) | .x > (m + 2*s), NA_real_, .x)
+#       }
+#     )
+#   )
+# table(data$ages14)
+
+
+# filtering participants
 data = data %>%
   filter(
     EUR_1KG_Outlier == 0, # filter out people not of european ancestry
@@ -35,15 +59,15 @@ data = data %>%
 # check sample size after filtering
 nrow(data)
 
+# --- setting datatypes ---
+
 # set sex to Male and Female using enumeration in factors. set 1 to male and 2 to female
 data$sex <- factor(data$sex, levels = c(1, 2), labels = c("Male", "Female"))
 data$genderlkrt12 <- factor(data$genderlkrt12, levels = c(1, 2), labels = c("Male", "Female"))
 
 # set datatypes of relevant variables to factors
 data <- data %>%
-  mutate(across(c(PLATFORM, sex, FISNumber, FamilyNumber), as.factor))
-
-data <- data %>%
+  mutate(across(c(PLATFORM, sex, FISNumber, FamilyNumber), as.factor)) %>%
   mutate(across(contains("aut_sum"), as.integer))
 
 # creating a check if all raters are present for this individual
@@ -141,6 +165,10 @@ data_long = data_long %>%
 # check data types for data in long format
 sapply(data_long, class)
 
+# mean(data_long$age, na.rm = TRUE)
+# 2 * sd(data_long$age, na.rm = TRUE)
+# print(count(filter(data_long, age < (mean(data_long$age, na.rm = TRUE) - 2 * sd(data_long$age, na.rm = TRUE)))))
+# print(count(filter(data_long, age > (mean(data_long$age, na.rm = TRUE) + 2 * sd(data_long$age, na.rm = TRUE)))))
 
 # Save the datasets
 saveRDS(data_mother, "data/processed/02_data_mother_clean.rds")
@@ -151,5 +179,6 @@ saveRDS(data, "data/processed/02_full_dataset_clean.rds")
 saveRDS(data_long, "data/processed/02_full_dataset_long.rds")
 saveRDS(data_all_items, "data/processed/02_data_all_items.rds")
 
-
-
+nrow(data_long)
+data_long = data_long %>% filter(!is.na(age)) # remove rows with NA in age
+nrow(data_long)

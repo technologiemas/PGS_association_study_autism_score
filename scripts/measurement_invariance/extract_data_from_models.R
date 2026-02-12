@@ -174,9 +174,15 @@ get_mi_details <- function(model_list, rater_name) {
 
     # Filter for Means/Intercepts/Thresholds, eg [item1] or [item1$1]:
     target_mis <- mis %>%
-      filter((is.na(operator) | operator == "") | grepl("\\[.*\\]", modV1) & !grepl("F", modV1)) %>%
-      select(modV1, MI, EPC, Group, Std_EPC, StdYX_EPC) %>% # Select relevant columns
-      mutate(
+        {
+        if (stage == "Full") {
+          filter(., (is.na(operator) | operator == "") | (grepl("F", modV1)))
+        } else {
+          filter(., (is.na(operator) | operator == "") | (grepl("\\[.*\\]", modV1) & !grepl("F", modV1)))
+        }
+        } %>%
+        select(modV1, MI, EPC, Group, Std_EPC, StdYX_EPC) %>% # Select relevant columns
+        mutate(
         Rater = rater_name,
         Model = stage,
         Parameter = modV1, # Format to look like Mplus output
@@ -187,8 +193,7 @@ get_mi_details <- function(model_list, rater_name) {
         `StdYX EPC` = StdYX_EPC
       ) %>%
       select(Rater, Model, Parameter, Group, `Modification Index (MI)`, `Expected Parameter Change (EPC)`, `Std EPC`, `StdYX EPC`) %>%
-      filter(!Model %in% c("Configural", "Full")) # Exclude Configural and Full models
-
+      filter(Model != "Configural")
       
     return(target_mis)
   })
@@ -211,11 +216,18 @@ note_rows <- 2:11  # Span 10 rows for the note
 
 # Write notes
 writeData(wb, "Results", 
-          "Note: Extended models represent those with modeled covariance between residuals of items. For Mother, Father and Teacher these are item4 WITH item10, and for self this is item4 WITH item9. The DiffTest compare the model against the previous model (i.e. Metric vs Configural). The first p-value under our threshold of p=0.01 in each rater group represents the level of measurement invariance that is not supported by the data.",
+          "Note: Extended models represent those with modeled covariance between residuals of items. 
+          For Mother, Father and Teacher these are item4 WITH item10, and for self this is item4 WITH item9. 
+          The DiffTest compare the model against the previous model (i.e. Metric vs Configural). 
+          The first p-value under our threshold of p=0.01 in each rater group represents the level of measurement invariance that is not supported by the data. \n 
+          Cells for fit indices highlighted green indicate good fit; yellow indicates adequate fit; red indicated poor fit.",
           startRow = note_rows[1], startCol = note_col_results)
 
 writeData(wb, "Modification Indices", 
-          "Note: This file contains detailed Modification Indices (M.I.s) for Means/Intercepts/Thresholds of items extracted from Mplus measurement invariance models. Only M.I.s above 20 from models where the DIFFTEST p-value is below 0.01 are included. Configural and Full models are excluded. \n \"The Std E.P.C. indices are standardized using the variances of the continuous latent variables. The StdYX E.P.C. indices are standardized using the variances of the continuous latent variables as well as the variances of the background and/or outcome variables.\" - (Muthén & Muthén, 1998-2017)",
+          "Note: This file contains detailed Modification Indices (M.I.s) for Means/Intercepts/Thresholds of items extracted from Mplus measurement invariance models. 
+          Only M.I.s above 20 from models where the DIFFTEST p-value is below 0.01 are included. 
+          For Full models the MIs for factor mean [F] are shown. Configural are excluded. \n 
+          \"The Std E.P.C. indices are standardized using the variances of the continuous latent variables. The StdYX E.P.C. indices are standardized using the variances of the continuous latent variables as well as the variances of the background and/or outcome variables.\" - (Muthén & Muthén, 1998-2017)",
           startRow = note_rows[1], startCol = note_col_mi)
 
 # Merge cells vertically for the note
