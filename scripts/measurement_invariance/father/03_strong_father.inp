@@ -52,7 +52,7 @@ MODEL:
 
 ! ---------- GROUP 2: FEMALE ----------
 MODEL female:
-  F BY item1-item10* (L1-L10); ! constrained between the grouops
+  F BY item1-item10* (L1-L10); ! constrained between the groups
 
   ! factor mean is estimated freely in female
   [F];     

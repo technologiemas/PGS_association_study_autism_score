@@ -40,22 +40,32 @@ ggplot(data_long, aes(x = autism_score, y = rater_type, fill = sex)) +
     aes(x = x, y = y, label = label),
     inherit.aes = FALSE, # Important: prevents text from trying to use 'fill' or 'y' from main aes
     color = "red",
-    size = 4
+    size = 5
   ) +
   scale_y_discrete(expand = expansion(add = c(0.1, 0.4))) +
   labs(
     title = "Distribution of Autism Scores by Rater Type",
-    subtitle = "Red lines indicate cut-offs for ordinal categories",
     x = "Autism Score (continuous)",
     y = "Rater Type"
   ) +
   theme_minimal() +
   theme(
     text = element_text(size = 20),
-    axis.text.x = element_text(size = 12, color = "black"),
+    axis.text.y = element_text(size = 14, color = "grey30"),
+    axis.text.x = element_text(size = 14, color = "black", margin = margin(t = 10, b = 0)),
     axis.line.x = element_line(color = "black"),
     axis.ticks.x = element_line(color = "black"),
-    plot.background = element_rect(fill = "white", color = NA)) +
+    strip.text.y = element_text(size = 18, angle = 0),
+    
+    # legend overlapping plot area
+    legend.position = c(0.88, 0.90),
+    legend.justification = c(1, 1),
+    legend.background = element_rect(fill = scales::alpha("white", 0.6), color = NA),
+    
+    # axis.text.x = element_text(margin = margin(t = -10, b = 0)),
+
+    plot.background = element_rect(fill = "white", color = NA)
+  ) +
   scale_color_manual(values = colors) +
   scale_fill_manual(values = colors)
 
@@ -123,4 +133,71 @@ ggplot(data_long, aes(x = rater_type, y = autism_score, fill = sex)) +
   labs(title = "Autism Score by Rater Type and Sex",
        x = "Rater Type",
        y = "Autism Score")
+
+
+# Figure histogram of autism scores by rater type
+# change order of sexes
+data_long <- data_long %>%
+  mutate(
+    sex = factor(
+      sex,
+      levels = c("Female", "Male")  # set your desired order
+    )
+  )
+
+ggplot(data_long, aes(x = autism_score, fill = sex)) +
+  geom_histogram(
+    binwidth = 1,
+    alpha = 0.7,
+    position = "identity",
+    color = "white"
+  ) +
+  facet_grid(rater_type ~ ., scales = "free_y", space = "free_y") +  # less whitespace
+  geom_vline(xintercept = c(0.5, 3.5), linetype = "dashed", color = "red", size = 0.6) +
+    geom_text(
+    data = data.frame(
+      x = c(0, 2, 4.5), 
+      y = -1, # place at the bottom
+      label = c("No", "Low", "High"), 
+      rater_type = factor("Self") # only at the bottom one
+    ),
+    aes(x = x, y = y, label = label),
+    inherit.aes = FALSE,
+    color = "red",
+    size = 6,
+    vjust = 1.3 # Adjusts it slightly down from the top border
+  ) +
+  scale_x_continuous(
+    breaks = seq(0, 20, by = 1),
+    minor_breaks = NULL,
+    expand = expansion(mult = c(-.003, 0))
+  ) +
+  scale_y_continuous(
+    breaks = function(x) seq(0, ceiling(max(x)), by = 200)) +
+  coord_cartesian(ylim = c(-150, NA), clip = "off") +
+  labs(
+    title = "Distribution of Autism Scores by Rater Type",
+    x = "Autism Score (continuous)",
+    y = "Count"
+  ) +
+  theme_minimal() +
+  theme(
+    text = element_text(size = 20),
+    axis.text.y = element_text(size = 14, color = "grey30"),
+    axis.text.x = element_text(size = 14, color = "black"),
+    axis.line.x = element_line(color = "black"),
+    axis.ticks.x = element_line(color = "black"),
+    strip.text.y = element_text(size = 18, angle = 0),
+
+    
+    # legend overlapping plot area
+    legend.position = "inside",
+    legend.justification = c(0.9, 0.9),
+    legend.background = element_rect(fill = scales::alpha("white", 0.6), color = NA),
+    
+    plot.background = element_rect(fill = "white", color = NA)
+  ) +
+  scale_fill_manual(values = colors)
+
+ggsave("results/figures/autism_score_histogram.png", width = 8, height = 10, dpi=600)
 

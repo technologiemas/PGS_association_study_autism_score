@@ -3,11 +3,14 @@
 rm(list = ls(all = TRUE))
 gc()
 
+library(scales)
 library(ordinal)
 library(ggplot2)
 library(emmeans)
 library(dplyr)
 source("scripts/_helper_functions.R")
+
+
 
 colors <- c("Male" = "#00C07B", "Female" = "#FFBB09") # set colors for the plots
 
@@ -232,6 +235,45 @@ plot_forest_odds_ratios <- function(model_fit, model_label) {
     theme_minimal()
 }
 
+
+
+plot_barplot_predicted_probabilities <- function(model_fit = fit_m3, outcome_var) {
+  # 1. Generate the predicted probabilities from your model
+  # 'mode = "prob"' ensures we get the probability for each ordinal level
+
+  emms_prob <- emmeans(model_fit, ~ sex * get(outcome_var)| rater_type, mode = "prob")
+  plot_data <- as.data.frame(emms_prob)
+
+  # 2. Create the Stacked Bar Chart
+  ggplot(plot_data, aes(x = sex, y = prob, fill = factor(outcome_var))) +
+    # Create the bars
+    geom_col(position = "stack", color = "white", width = 0.7) +
+    # Add the percentage labels inside the bars
+    geom_text(
+      aes(label = percent(prob, accuracy = 1)), 
+      position = position_stack(vjust = 0.5), # Centers the text in each segment
+      size = 4,
+      fontface = "bold"
+    ) +
+    # Separate by rater type for side-by-side comparison
+    facet_wrap(~ rater_type, nrow = 1) + 
+    # Formatting and Colors
+    scale_fill_brewer(palette = "Blues", name = "Autism Score Level") +
+    scale_y_continuous(labels = percent_format()) +
+    labs(
+      title = "Predicted Autism Score Levels by Sex and Rater",
+      subtitle = "Based on Ordinal Logistic Regression Probabilities",
+      x = "Sex",
+      y = "Predicted Probability (%)"
+    ) +
+    theme_minimal() +
+    theme(
+      strip.text = element_text(face = "bold", size = 12),
+      legend.position = "bottom",
+      panel.grid.major.x = element_blank()
+    )
+  } 
+
 # --- load models ---
 
 fit_m3 <- readRDS("results/models/fit_m3_clmm.rds")
@@ -253,6 +295,8 @@ p_m3_contr <- plot_pairwise_contrasts_rater_sex(res_m3$contrasts, "Model 3", out
 p_m4_three_way <- plot_three_way(df_m4, "Model 4", outcome_var = "autism_score_ordinal")
 p_m4_three_way_high_only <- plot_three_way_high_only(df_m4, "Model 4", outcome_var = "autism_score_ordinal")
 p_m4_forest <- plot_forest_odds_ratios(fit_m4, "Model 4")
+
+# p_barplot_pred_prob = plot_barplot_predicted_probabilities(fit_m3, outcome_var = "autism_score_ordinal") # another plot type to visualise predicted probabilities
 
 # sensitivity analyses
 res_m3_sensitivity <- get_rater_sex_emmeans(fit_m3_sensitivity, outcome_var = "autism_score_ordinal_sensitivity")
@@ -278,22 +322,34 @@ p_m4_forest_sensitivity_all_raters <- plot_forest_odds_ratios(fit_m4_sensitivity
 # save plots
 
 dir.create("results/figures", showWarnings = FALSE)
+dir.create("results/figures/sensitivity", showWarnings = FALSE)
+dir.create("results/figures/sensitivity_all_raters", showWarnings = FALSE)
 
 # ggsave(
-#   "results/figures/pred_prob_rater_sex.tiff",
+#   "results/figures/pred_prob_rater_sex.png",
 #   p_m3_prob,
-#   device = "tiff",
+#   device = "png",
 #   width = 8.4, height = 6, units = "cm",
 #   dpi = 600, scale = 2
 # )
 
 # ggsave(
-#   "results/figures/pairwise_contrast_rater_sex.tiff",
+#   "results/figures/pairwise_contrast_rater_sex.png",
 #   p_m3_contr,
-#   device = "tiff",
+#   device = "png",
 #   width = 8.4, height = 6, units = "cm",
 #   dpi = 600, scale = 2
 # )
+
+save_plots <- function(plot, filename) {
+  ggsave(
+    filename,
+    plot,
+    device = "png",
+    width = 8.4, height = 6, units = "cm",
+    dpi = 600, scale = 2
+  )
+}
 
 
 

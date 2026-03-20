@@ -35,8 +35,12 @@ fit_m5 <- readRDS("results/models/fit_m5_clmm.rds")
 anova(fit_m1, fit_m2, fit_m3, fit_m4, fit_m5) # models 3 and 4 are best
 
 # best models performance checks
+
+performance(fit_m1)
+performance(fit_m2)
 performance(fit_m3)
 performance(fit_m4)
+performance(fit_m5)
 
 # exploration of sample sizes
 mf <- model.frame(fit_m4)

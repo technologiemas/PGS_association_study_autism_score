@@ -21,39 +21,61 @@ for (item in items_t12) {print(table(data[[item]]))}
 for (item in items_v12) {print(table(data[[item]]))}
 for (item in items_ysr14) {print(table(data[[item]]))}
 
+# boxplot of ages to check for outliers
+boxplot(data$ages14, main = "Self", ylab = "Age") # very high values. Older siblings are in the dataset
+boxplot(data$agem12, main = "Mother", ylab = "Age") 
+boxplot(data$agev12, main = "Father", ylab = "Age")
+boxplot(data$agetrf12, main = "Teacher", ylab = "Age")
+table(data$agetrf12) # very low values. Younger siblings? Weird.
 
 # --- cleaning the data ---
 
-# filter out people older than 16 for the YSR. has to be done with mutate to not drop entire rows
-# data = data %>%
-#   mutate(
-#     ysr14_aut_sum = if_else(ages14 >= 16, NA_real_, ysr14_aut_sum),
-#     ysr14_aut_sum_sensitivity = if_else(ages14 >= 16, NA_real_, ysr14_aut_sum_sensitivity)
-#   )
-
 # mean(data$ages14, na.rm = TRUE) + 2 * sd(data$ages14, na.rm = TRUE)
-# table(data$ages14)
-# put age to NA for people with age more than 2 standard deviations from the mean for each rater type. has to be done with mutate to not drop entire rows
-# data <- data %>%
-#   mutate(
-#     across(
-#       c(agem12, agev12, agetrf12, ages14),
-#       ~ {
-#         m <- mean(.x, na.rm = TRUE)
-#         s <- sd(.x, na.rm = TRUE)
-#         if_else(.x <= (m - 2*s) | .x > (m + 2*s), NA_real_, .x)
-#       }
-#     )
-#   )
-# table(data$ages14)
 
+# put age to NA for people with age outside IQR for each rater type. Has to be done with mutate to not drop entire rows
+# For mother, father and teacher, we will only put to NA the values that are more than 2 standard deviations below the mean, as these are likely to be younger siblings. For self-report, we will only put to NA the values that are more than 2 standard deviations above the mean, as these are likely to be older siblings. This makes the age ranges more equal.
+data <- data %>%
+  mutate(
+    across(
+      c(agem12, agev12, agetrf12),
+      ~ {
+        m <- mean(.x, na.rm = TRUE)
+        # s <- sd(.x, na.rm = TRUE)
+        IQR <- IQR(.x, na.rm = TRUE)
+        Q1 = quantile(.x, 0.25, na.rm = TRUE)
+        Q3 = quantile(.x, 0.75, na.rm = TRUE)
+        lower = Q1 - 1.5 * IQR
+        if_else(.x < lower, NA_real_, .x)
+      }
+    )
+  ) %>%
+  mutate(
+    across(
+      c(ages14),
+      ~ {
+      m = mean(.x, na.rm = TRUE)
+      # s = sd(.x, na.rm = TRUE)
+      IQR = IQR(.x, na.rm = TRUE)
+      Q1 = quantile(.x, 0.25, na.rm = TRUE)
+      Q3 = quantile(.x, 0.75, na.rm = TRUE)
+      upper = Q3 + 1.5 * IQR
+      if_else(.x > upper, NA_real_, .x)
+      }
+    )
+  )
+
+# check boxplots again to see if outliers are removed. Looks good
+boxplot(data$ages14, main = "Self", ylab = "Age") # very high values. Older siblings are in the dataset
+boxplot(data$agem12, main = "Mother", ylab = "Age") 
+boxplot(data$agev12, main = "Father", ylab = "Age")
+boxplot(data$agetrf12, main = "Teacher", ylab = "Age")
 
 # filtering participants
 data = data %>%
   filter(
     EUR_1KG_Outlier == 0, # filter out people not of european ancestry
     !if_all(c(m12_aut_sum, v12_aut_sum, t12_aut_sum, ysr14_aut_sum), is.na), # drop rows with NA for all rater types to clean it up a bit
-    !is.na(sex), # drop participants for which chromosomal sex is NA
+    !is.na(sex) # drop participants for which chromosomal sex is NA
     )  
 
 # check sample size after filtering
@@ -70,7 +92,7 @@ data <- data %>%
   mutate(across(c(PLATFORM, sex, FISNumber, FamilyNumber), as.factor)) %>%
   mutate(across(contains("aut_sum"), as.integer))
 
-# creating a check if all raters are present for this individual
+# creating a check if all raters are present for this individual. Used in later analyses
 data <- data %>%
   mutate(all_rater_present = ifelse(!is.na(m12_aut_sum) & !is.na(v12_aut_sum) & !is.na(t12_aut_sum) & !is.na(ysr14_aut_sum), TRUE, FALSE))
 
@@ -96,7 +118,7 @@ data_mother  <- create_rater_dataset(data, "in_YS_12M", pheno_cols_general, geno
 data_father  <- create_rater_dataset(data, "in_YS_12V", pheno_cols_general, geno_cols_general, pheno_cols_father, "v12_aut_sum")
 data_teacher <- create_rater_dataset(data, "in_YS_TRF12", pheno_cols_general, geno_cols_general, pheno_cols_teacher, "t12_aut_sum")
 data_ysr     <- create_rater_dataset(data, "in_YS_DHBQ14", pheno_cols_general, geno_cols_general, pheno_cols_ysr, "ysr14_aut_sum")
-data_all_items = data
+data_all_items = data # save full dataset with all cols available (including individual items etc)
 
 # deselect columns related to items, outliers and indicators (in_YS_12M, in_YS_12V, in_YS_TRF12, in_YS_DHBQ14)
 data_mother  <- data_mother %>% select(-EUR_1KG_Outlier, -all_of(items_m12))
@@ -147,28 +169,34 @@ data_long <- data_long %>% select(-age_key, -agem12, -agev12, -agetrf12, -ages14
 
 data_long$rater_type <- factor(data_long$rater_type, levels = c("m12", "v12", "t12", "ysr14"), labels = c("Mother", "Father", "Teacher", "Self")) # convert rater_type to factor
 
-data_long <- data_long %>% filter(!is.na(autism_score)) # remove rows with NA in autism_score
+# filtering data_long to remove rows with NA values
+nrow(data_long)
+data_long = data_long %>% 
+  filter(!is.na(age),
+         !is.na(autism_score),
+         !is.na(autism_score_sensitivity),
+         !is.na(autism_score_ordinal),
+         !is.na(autism_score_ordinal_sensitivity))
+
+nrow(data_long)
 
 # ordinalize autism score into three levels: 0, 1-3, 4+
 data_long = data_long %>%
   mutate(autism_score_ordinal = cut(autism_score,
                                  breaks = c(-Inf, 1, 4, Inf),
                                  labels = c("no", "mild", "high"),
-                                 right = FALSE)) 
+                                 right = FALSE,
+                                 ordered_result = TRUE)) 
 
 data_long = data_long %>%
   mutate(autism_score_ordinal_sensitivity = cut(autism_score_sensitivity,
                                  breaks = c(-Inf, 1, 4, Inf),
                                  labels = c("no", "mild", "high"),
-                                 right = FALSE)) 
+                                 right = FALSE, 
+                                 ordered_result = TRUE)) 
 
 # check data types for data in long format
 sapply(data_long, class)
-
-# mean(data_long$age, na.rm = TRUE)
-# 2 * sd(data_long$age, na.rm = TRUE)
-# print(count(filter(data_long, age < (mean(data_long$age, na.rm = TRUE) - 2 * sd(data_long$age, na.rm = TRUE)))))
-# print(count(filter(data_long, age > (mean(data_long$age, na.rm = TRUE) + 2 * sd(data_long$age, na.rm = TRUE)))))
 
 # Save the datasets
 saveRDS(data_mother, "data/processed/02_data_mother_clean.rds")
@@ -179,6 +207,4 @@ saveRDS(data, "data/processed/02_full_dataset_clean.rds")
 saveRDS(data_long, "data/processed/02_full_dataset_long.rds")
 saveRDS(data_all_items, "data/processed/02_data_all_items.rds")
 
-nrow(data_long)
-data_long = data_long %>% filter(!is.na(age)) # remove rows with NA in age
-nrow(data_long)
+

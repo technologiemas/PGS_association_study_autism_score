@@ -68,16 +68,19 @@ calculate_descriptives_phenotype <- function(data_long, phenotype) {
     group_by(`rater_type`, `sex`) %>%
     summarise(
       n         = sum(!is.na({{phenotype}})),
-      mean      = mean({{phenotype}}, na.rm = TRUE),
+      `age (mean)`       = mean(age, na.rm = TRUE),
+      `age (sd)`         = sd(age, na.rm = TRUE),
+      `autism score (mean)`      = mean({{phenotype}}, na.rm = TRUE),
       sd        = sd({{phenotype}},   na.rm = TRUE),
       skewness  = skewness({{phenotype}},  na.rm = TRUE),
       kurtosis  = kurtosis({{phenotype}},  na.rm = TRUE),
       .groups   = "drop"
-    ) %>%
-    left_join(pvals, by = "rater_type") %>%
-    left_join(effect_sizes, by = "rater_type")
+    ) 
+    # %>%
+  #   left_join(pvals, by = "rater_type") %>%
+  #   left_join(effect_sizes, by = "rater_type")
 
-  descriptives$p_value = descriptives$p_value * 4 # Bonferroni correction for 4 tests
+  # descriptives$p_value = descriptives$p_value * 4 # Bonferroni correction for 4 tests
 
   return(descriptives)
 }
@@ -92,13 +95,19 @@ calculate_descriptives_genotype <- function(data, PGS) {
   # Returns:
   #   A data frame with descriptive statistics and p-values
 
+  # filter on unique FISNumber to avoid duplicates in the data (as the data is in long format with multiple rows per participant)
+  data_unique = data %>%
+    group_by(FISNumber) %>%
+    slice(1) %>%
+    ungroup() 
+
   # one t-test per rater_type
-  pvals <- data %>%
+  pvals <- data_unique %>%
     summarise(t_test_p = t.test({{PGS}} ~ `sex`)$p.value, # t-test was chosen as data is normally distributed according to Shapiro-Wilk test (above)
               .groups = "drop")
 
   # calculate effect sizes
-  effect_sizes <- data %>%
+  effect_sizes <- data_unique %>%
     reframe(
       cohen_d = cohen.d({{PGS}} ~ `sex`, data = cur_data())$cohen.d[2],
     )
@@ -106,12 +115,12 @@ calculate_descriptives_genotype <- function(data, PGS) {
   pgs_str = sub(".*_LDp1", "", deparse(substitute(PGS)))
 
   # calculate descriptives for each rater type and sex
-  descriptives <- data %>%
+  descriptives <- data_unique %>%
     group_by(`sex`) %>%
     summarise(
       name = paste0("PGS", pgs_str),
       n         = sum(!is.na({{PGS}})),
-      mean      = mean({{PGS}}, na.rm = TRUE),
+      `PGS (mean)`      = mean({{PGS}}, na.rm = TRUE),
       sd        = sd({{PGS}},   na.rm = TRUE),
       skewness  = skewness({{PGS}},  na.rm = TRUE),
       kurtosis  = kurtosis({{PGS}},  na.rm = TRUE),
@@ -127,8 +136,8 @@ calculate_descriptives_genotype <- function(data, PGS) {
 data_wide = data %>%
   pivot_wider(names_from = sex, values_from = c(m12_aut_sum, v12_aut_sum, t12_aut_sum, ysr14_aut_sum))
 
-cor_matrix_females = cor(select(data_wide, m12_aut_sum_FEMALE, v12_aut_sum_FEMALE, t12_aut_sum_FEMALE, ysr14_aut_sum_FEMALE), use = "pairwise.complete.obs")
-cor_matrix_males = cor(select(data_wide, m12_aut_sum_MALE, v12_aut_sum_MALE, t12_aut_sum_MALE, ysr14_aut_sum_MALE), use = "pairwise.complete.obs")
+cor_matrix_females = cor(select(data_wide, m12_aut_sum_Female, v12_aut_sum_Female, t12_aut_sum_Female, ysr14_aut_sum_Female), use = "pairwise.complete.obs")
+cor_matrix_males = cor(select(data_wide, m12_aut_sum_Male, v12_aut_sum_Male, t12_aut_sum_Male, ysr14_aut_sum_Male), use = "pairwise.complete.obs")
 cor_all = cor(select(data, m12_aut_sum, v12_aut_sum, t12_aut_sum, ysr14_aut_sum), use = "pairwise.complete.obs")
 
 # count the number of individuals for which each rater type is available for that individual
@@ -175,10 +184,7 @@ lst_correlations = list(
 )
 # append descriptives_genotype_scaled to descriptives_genotype
 descriptives_genotype = descriptives_genotype %>%
-  bind_rows(
-    descriptives_genotype_scaled %>%
-      mutate(p_value = NA, cohen_d = NA)
-  )
+  bind_rows(descriptives_genotype_scaled)
 
 lst_descriptives = list(
   descriptives_phenotype = descriptives_phenotype,
