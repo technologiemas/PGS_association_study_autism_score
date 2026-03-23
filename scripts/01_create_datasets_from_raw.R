@@ -3,6 +3,7 @@
 
 rm(list = ls(all = TRUE))
 gc()
+
 library(haven)
 library(dplyr)
 library(stringr)
@@ -17,8 +18,9 @@ genotype_data = read_sav(genotype_file_path)
 # view labels of the columns in the data
 lapply(phenotype_data, function(x) attr(x, "label"))
 
-# change colname FISNumber to FISnumber for consistency with phenotype data
-genotype_data = genotype_data %>% rename(FISNumber = FISnumber)
+# change some colnames
+genotype_data = genotype_data %>% rename(FISNumber = FISnumber) # so its the same in phenotype
+phenotype_data = phenotype_data %>% rename(date_of_assessment = !TODO!)
 
 # select the columns of interest from the phenotype data
 data = phenotype_data %>%

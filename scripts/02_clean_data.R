@@ -28,7 +28,15 @@ boxplot(data$agev12, main = "Father", ylab = "Age")
 boxplot(data$agetrf12, main = "Teacher", ylab = "Age")
 table(data$agetrf12) # very low values. Younger siblings? Weird.
 
+# looking at an effect of date/birth cohort on the autism scores
+boxplot(data$m12_aut_sum ~ data$date_of_assessment, main = "Mother", xlab = "Date of assessment (numeric)", ylab = "Autism score")
+
 # --- cleaning the data ---
+
+# transforming dates to be linear so the model can handle it
+data = data %>%
+  mutate(date_of_assessment = as.Date(date_of_assessment, format = "%d-%m-%Y"),
+         date_of_assessment_numeric = as.numeric(date_of_assessment))
 
 # mean(data$ages14, na.rm = TRUE) + 2 * sd(data$ages14, na.rm = TRUE)
 

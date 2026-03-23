@@ -208,14 +208,14 @@ all_mi_data <- do.call(rbind, lapply(names(models), function(n) {
   get_mi_details(models[[n]], n)
 }))
 
-writeData(wb, "Modification Indices", all_mi_data)
+writeData(wb, "MI_modification_indices", all_mi_data)
 
 note_col_results <- ncol(df) + 2
 note_col_mi <- ncol(all_mi_data) + 2
 note_rows <- 2:11  # Span 10 rows for the note
 
 # Write notes
-writeData(wb, "Results", 
+writeData(wb, "MI_results", 
           "Note: Extended models represent those with modeled covariance between residuals of items. 
           For Mother, Father and Teacher these are item4 WITH item10, and for self this is item4 WITH item9. 
           The DiffTest compare the model against the previous model (i.e. Metric vs Configural). 
@@ -223,7 +223,7 @@ writeData(wb, "Results",
           Cells for fit indices highlighted green indicate good fit; yellow indicates adequate fit; red indicated poor fit.",
           startRow = note_rows[1], startCol = note_col_results)
 
-writeData(wb, "Modification Indices", 
+writeData(wb, "MI_modification_indices", 
           "Note: This file contains detailed Modification Indices (M.I.s) for Means/Intercepts/Thresholds of items extracted from Mplus measurement invariance models. 
           Only M.I.s above 20 from models where the DIFFTEST p-value is below 0.01 are included. 
           For Full models the MIs for factor mean [F] are shown. Configural are excluded. \n 
@@ -231,15 +231,15 @@ writeData(wb, "Modification Indices",
           startRow = note_rows[1], startCol = note_col_mi)
 
 # Merge cells vertically for the note
-mergeCells(wb, "Modification Indices", cols = note_col_mi, rows = note_rows)
-mergeCells(wb, "Results", cols = note_col_results, rows = note_rows)
+mergeCells(wb, "MI_modification_indices", cols = note_col_mi, rows = note_rows)
+mergeCells(wb, "MI_results", cols = note_col_results, rows = note_rows)
 
 # Apply text wrapping and set column width
 note_style <- createStyle(wrapText = TRUE, valign = "top")
-addStyle(wb, "Modification Indices", note_style, rows = note_rows, cols = note_col_mi)
-setColWidths(wb, "Modification Indices", cols = note_col_mi, widths = 50)
+addStyle(wb, "MI_modification_indices", note_style, rows = note_rows, cols = note_col_mi)
+setColWidths(wb, "MI_modification_indices", cols = note_col_mi, widths = 50)
 
-addStyle(wb, "Results", note_style, rows = note_rows, cols = note_col_results)
-setColWidths(wb, "Results", cols = note_col_results, widths = 50)
+addStyle(wb, "MI_results", note_style, rows = note_rows, cols = note_col_results)
+setColWidths(wb, "MI_results", cols = note_col_results, widths = 50)
 
 saveWorkbook(wb, "results/measurement_invariance_results.xlsx", overwrite = TRUE)

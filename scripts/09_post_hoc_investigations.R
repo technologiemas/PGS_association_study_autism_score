@@ -209,12 +209,15 @@ post <- drop_df_columns(post)
 post_sensitivity <- drop_df_columns(post_sensitivity)
 post_sensitivity_all_raters <- drop_df_columns(post_sensitivity_all_raters)
 
+# rename sheets in post, post_sensitivity, and post_sensitivity_all_raters to have a postfix indicating the dataset
+names(post_sensitivity) <- paste0(names(post_sensitivity), "_sensitivity")
+names(post_sensitivity_all_raters) <- paste0(names(post_sensitivity_all_raters), "_sensitivity_all_raters")
+
 # save results
 dir.create("results/post_hoc_investigations", showWarnings = FALSE, recursive = TRUE) # create directory if it doesn't exist
-openxlsx::write.xlsx(all_contrast_sex_dyads, "results/post_hoc_investigations/contrast_sex_dyads.xlsx") # save as xlsx
+openxlsx::write.xlsx(all_contrast_sex_dyads, "results/post_hoc_investigations/contrast_sex_dyads.xlsx", sheetName = "contrast_sex_dyads") # save as xlsx
 openxlsx::write.xlsx(post, "results/post_hoc_investigations/post.xlsx") # save as xlsx
 openxlsx::write.xlsx(post_sensitivity, "results/post_hoc_investigations/post_sensitivity.xlsx") # save as xlsx
 openxlsx::write.xlsx(post_sensitivity_all_raters, "results/post_hoc_investigations/post_sensitivity_all_raters.xlsx") # save as xlsx
-
 
 

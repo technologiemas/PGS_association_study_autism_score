@@ -68,10 +68,10 @@ model_results_m4 <- list_model_results(fit_m4)
 model_results_m5 <- list_model_results(fit_m5)
 
 lst_results <- list(
-  "Model 3" = model_results_m3,
-  "Model 4" = model_results_m4,
-  "Model 5" = model_results_m5,
-  "Distribution autism scores lvls" = distribution_scores_m3
+  "model_3_output" = model_results_m3,
+  "model_4_output" = model_results_m4,
+  "model_5_output" = model_results_m5,
+  "autism_scores_lvls_distribution" = distribution_scores_m3
 )
 
 openxlsx::write.xlsx(lst_results, "results/model_output.xlsx") 

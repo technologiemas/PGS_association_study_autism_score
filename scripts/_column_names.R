@@ -8,7 +8,7 @@ geno_cols_general = c("FISNumber",
                       "PC1_1KG", "PC2_1KG", "PC3_1KG", "PC4_1KG", "PC5_1KG", "PC6_1KG", "PC7_1KG", "PC8_1KG", "PC9_1KG", "PC10_1KG")
 
 # general columns phenotype data
-pheno_cols_general = c("FISNumber", "sex", "FamilyNumber")
+pheno_cols_general = c("FISNumber", "sex", "FamilyNumber", "date_of_assessment(TODO)")
 
 # group columns by rater in phenotype data for the So et al. items
 items_m12 = c( "q1m12", "q9m12", "q17m12", "q42m12", "q62m12", "q66m12", "q79m12", "q80m12", "q84m12", "q111m12")
