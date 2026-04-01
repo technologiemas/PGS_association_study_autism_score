@@ -13,6 +13,8 @@ library(openxlsx)
 data = readRDS("data/processed/02_full_dataset_clean.rds")
 data_long = readRDS("data/processed/02_full_dataset_long.rds")
 
+data_long = data_long %>%
+  filter(rater_type %in% c("Mother", "Father", "Teacher", "Self")) # filter out the ysr at age 12 rater type for the main analyses
 
 # --- distribution of age in the sample ---
 

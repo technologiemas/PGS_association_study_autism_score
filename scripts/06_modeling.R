@@ -1,5 +1,4 @@
 # This script runs the models for the main modeling analyses using ordinal regression with clmm from the ordinal package
-# Also has some bayesian modeling
 # Takes a long time to run be warned! 
 
 rm(list = ls(all = TRUE))
@@ -16,6 +15,10 @@ source("scripts/_helper_functions.R")
 
 # --- LOAD DATA ---
 data_long = readRDS("data/processed/02_full_dataset_long.rds")
+data_long_ysr12 = data_long # for sensitivity analysis including ysr at age 12
+data_long = data_long %>%
+  filter(rater_type %in% c("Mother", "Father", "Teacher", "Self")) # filter out the ysr at age 12 rater type for the main analyses
+
 
 # --- PRE-PROCESSING & FORMATTING ---
 
@@ -31,13 +34,6 @@ vars_to_scale <- c("PGS", paste0("PC", 1:10), "autism_score", "autism_score_sens
 data_long = data_long %>%
   mutate(across(all_of(vars_to_scale),
                 ~ as.numeric(scale(.)), .names = "{col}_scaled")) 
-
-# make sure the ordinal autism score outcome factored and ordered for the clmm models
-data_long$autism_score_ordinal <- factor(
-  data_long$autism_score_ordinal, 
-  levels = sort(unique(data_long$autism_score_ordinal)), 
-  ordered = TRUE
-)
 
 # Check data types
 sapply(data_long, class)

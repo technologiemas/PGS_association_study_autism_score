@@ -95,7 +95,7 @@ get_slopes_three_way <- function(fit_model) {
 lst_results = function(two_way_model, three_way_model, outcome_var) {
   list(
   # estimated marginal means for rater type within each sex
-  estimated_marginal_means = as.data.frame(get_emm_rater_sex(two_way_model)),
+  emm = as.data.frame(get_emm_rater_sex(two_way_model)),
 
   contrast_emm_sexes = 
     contrast_with_unadj(
@@ -105,7 +105,7 @@ lst_results = function(two_way_model, three_way_model, outcome_var) {
       adjust = "fdr"
     ),
 
-  contrast_emm_sexes_pgs_2sd = 
+  contrast_sexes_pgs_2sd = 
     contrast_with_unadj(
       get_emm_rater_sex(two_way_model, at = list(PGS_scaled = 2)), # this is the contrast at 2SD above the mean of PGS
       method = "pairwise",
@@ -123,11 +123,11 @@ lst_results = function(two_way_model, three_way_model, outcome_var) {
     ),
 
   # cumulative probabilities for each autism score level (no, low, high) within each rater type and sex
-  estimated_prob_rater_sex =
+  prob_rater_sex =
     as.data.frame(get_eprob_rater_sex(two_way_model, outcome_var)),
 
   # pairwise contrasts between rater types within each sex for the estimated probabilities
-  contrast_eprob_sexes =
+  contrast_prob_sexes =
     contrast_with_unadj(
       get_eprob_rater_sex(two_way_model, outcome_var),
       method = "pairwise",
@@ -135,7 +135,7 @@ lst_results = function(two_way_model, three_way_model, outcome_var) {
       adjust = "fdr"
     ),
   
-  contrast_eprob_raters =
+  contrast_prob_raters =
     contrast_with_unadj(
       get_eprob_rater_sex(two_way_model, outcome_var),
       method = "pairwise",
@@ -144,11 +144,11 @@ lst_results = function(two_way_model, three_way_model, outcome_var) {
     ),
 
   # pgs association with latent autism score ordinal within each rater type and sex
-  three_way_emtrends =
+  `3_way_emtrends` =
     as.data.frame(get_slopes_three_way(three_way_model)),
 
   # pairwise contrast between sexes of pgs association with probability of autism score ordinal within each rater type
-  three_way_contrast_sexes =
+  `3_way_contrast_sexes` =
     contrast_with_unadj(
       get_slopes_three_way(three_way_model),
       method = "pairwise",
@@ -157,7 +157,7 @@ lst_results = function(two_way_model, three_way_model, outcome_var) {
     ),
 
   # pairwise contrast between rater types of pgs association with probability of autism score ordinal within
-  three_way_contrast_raters =
+  `3_way_contrast_raters` =
     contrast_with_unadj(
       get_slopes_three_way(three_way_model),
       method = "pairwise",
@@ -210,8 +210,8 @@ post_sensitivity <- drop_df_columns(post_sensitivity)
 post_sensitivity_all_raters <- drop_df_columns(post_sensitivity_all_raters)
 
 # rename sheets in post, post_sensitivity, and post_sensitivity_all_raters to have a postfix indicating the dataset
-names(post_sensitivity) <- paste0(names(post_sensitivity), "_sensitivity")
-names(post_sensitivity_all_raters) <- paste0(names(post_sensitivity_all_raters), "_sensitivity_all_raters")
+names(post_sensitivity) <- paste0(names(post_sensitivity), "_sens")
+names(post_sensitivity_all_raters) <- paste0(names(post_sensitivity_all_raters), "_sens_all")
 
 # save results
 dir.create("results/post_hoc_investigations", showWarnings = FALSE, recursive = TRUE) # create directory if it doesn't exist

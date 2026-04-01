@@ -6,17 +6,28 @@ gc()
 
 library(openxlsx)
 
-# get all xlsx files in the results folder
-xlsx_files_paths <- list.files("results", pattern = "\\.xlsx$", full.names = TRUE, recursive = TRUE)
+# xlsx_files_paths <- list.files("results", pattern = "\\.xlsx$", full.names = TRUE, recursive = TRUE)
+
+xlsx_files_paths = c(
+    "results/correlation_matrices.xlsx",
+    "results/descriptives.xlsx",
+    "results/measurement_invariance_results.xlsx",
+    "results/model_output.xlsx",
+    "results/post_hoc_investigations/contrast_sex_dyads.xlsx",
+    "results/post_hoc_investigations/post.xlsx",
+    "results/post_hoc_investigations/post_sensitivity.xlsx",
+    "results/post_hoc_investigations/post_sensitivity_all_raters.xlsx"
+)
+
 xlsx_files = list()
 
-read_all_sheets = function(xlsxFile, ...) {
-    """reads all the sheets of an xlsx file and returns them as a list of dataframes. The names are the names of the sheets."""
+# reads all the sheets of an xlsx file and returns them as a list of dataframes. The names are the names of the sheets."
+read_all_sheets = function(xlsxFile) {
   sheet_names = openxlsx::getSheetNames(xlsxFile)
   sheet_list = as.list(rep(NA, length(sheet_names)))
   names(sheet_list) = sheet_names
   for (sn in sheet_names) {
-    sheet_list[[sn]] = openxlsx::read.xlsx(xlsxFile, sheet=sn, ...)
+    sheet_list[[sn]] = openxlsx::read.xlsx(xlsxFile, sheet=sn)
   }
   return(sheet_list)
 }
