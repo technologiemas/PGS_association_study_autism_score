@@ -34,7 +34,7 @@ data_long = readRDS("data/processed/02_full_dataset_long.rds")
 
 # Scaling Continuous Variables
 # We scale PCs, PGS, and both versions of the continuous autism score (for linear models)
-vars_to_scale <- c("autism_score", "autism_score_sensitivity", "age") # TODO: , "date_of_assessment_numeric"
+vars_to_scale <- c("autism_score", "autism_score_sensitivity", "age", "date_of_assessment") # TODO: , "date_of_assessment_numeric"
 data_long = data_long %>%
   mutate(across(all_of(vars_to_scale),
                 ~ as.numeric(scale(.)), .names = "{col}_scaled")) 
@@ -90,7 +90,7 @@ summary(fit_m1_ordinal)
 emmeans(fit_m1_ordinal, ~ twin_sex * genderlkrt12)
 contrast(emmeans(fit_m1_ordinal, ~ twin_sex * genderlkrt12), method = "pairwise") # looking at the pairwise comparisons
 
-ggplot(teacher_data, aes(x = genderlkrt12, y = autism_score_scaled, color = twin_sex, group = twin_sex)) +
+plot_teacher_twins = ggplot(teacher_data, aes(x = genderlkrt12, y = autism_score_scaled, color = twin_sex, group = twin_sex)) +
   stat_summary(fun = mean, geom = "point", size = 3) +
   stat_summary(fun = mean, geom = "line", size = 1) +
   labs(title = "Interaction: Teacher Sex vs Twin Sex",
@@ -100,6 +100,13 @@ ggplot(teacher_data, aes(x = genderlkrt12, y = autism_score_scaled, color = twin
   theme_minimal() +
     ylim(-2, 2) # Adjust y-axis limits for better visualization
 
+ggsave(
+  "results/figures/teacher_twins.png",
+  plot_teacher_twins,
+  device = "png",
+  width = 8.4, height = 6, units = "cm",
+  dpi = 600, scale = 2
+)
 
 # --- same as above but now for mothers and fathers ---
 
@@ -113,17 +120,22 @@ summary(fit_m2_ordinal)
 emmeans(fit_m2_ordinal, ~ twin_sex * rater_type)
 contrast(emmeans(fit_m2_ordinal, ~ twin_sex * rater_type), method = "pairwise") # looking at the pairwise comparisons
 
-ggplot(parent_data, aes(x = rater_type, y = autism_score_scaled, color = twin_sex, group = twin_sex)) +
+plot_parent_twins = ggplot(parent_data, aes(x = rater_type, y = autism_score_scaled, color = twin_sex, group = twin_sex)) +
   stat_summary(fun = mean, geom = "point", size = 3) +
   stat_summary(fun = mean, geom = "line", size = 1) +
   labs(title = "Interaction: Parent Sex vs Twin Sex",
        x = "Parent Sex",
        y = "Mean Autism Score",
        color = "Twin Sex") +
-  theme_minimal() + 
   ylim(-2, 2) # Adjust y-axis limits for better visualization
 
-
+ggsave(
+  "results/figures/parent_twins.png",
+  plot_parent_twins,
+  device = "png",
+  width = 8.4, height = 6, units = "cm",
+  dpi = 600, scale = 2
+)
 
 # ------------------------------------
 

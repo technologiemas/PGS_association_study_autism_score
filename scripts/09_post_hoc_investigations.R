@@ -13,12 +13,17 @@ library(openxlsx)
 # Load the the clmm model with the best fit (model 3 & 4)
 fit_m3 <- readRDS("results/models/fit_m3_clmm.rds")
 fit_m4 <- readRDS("results/models/fit_m4_clmm.rds")
+fit_m5 <- readRDS("results/models/fit_m5_clmm.rds")
 
 fit_m3_sensitivity <- readRDS("results/models/sensitivity/fit_m3_clmm_sensitivity.rds") 
 fit_m4_sensitivity <- readRDS("results/models/sensitivity/fit_m4_clmm_sensitivity.rds") 
 
 fit_m3_sensitivity_all_raters <- readRDS("results/models/sensitivity/fit_m3_clmm_sensitivity_all_raters.rds") 
 fit_m4_sensitivity_all_raters <- readRDS("results/models/sensitivity/fit_m4_clmm_sensitivity_all_raters.rds")
+
+fit_m3_sensitivity_ysr_12 <- readRDS("results/models/sensitivity/fit_ysr_12_m3_clmm_sensitivity.rds") # TODO investigate this
+fit_m4_sensitivity_ysr_12 <- readRDS("results/models/sensitivity/fit_ysr_12_m4_clmm_sensitivity.rds")
+
 
 # helper function to get contrasts with unadjusted p-values. This function was made with help of AI but seems to work well
 contrast_with_unadj <- function(emm_obj, ..., adjust = "fdr") {
@@ -50,15 +55,17 @@ contrast_with_unadj <- function(emm_obj, ..., adjust = "fdr") {
     out$`OR 95% CI Upper` <- exp(out$estimate + 1.96 * out$SE)
   }
 
-  if("asymp.LCL" %in% names(out)) {
-    names(out)[names(out) == "asymp.LCL"] <- "95% CI Lower"
-  }
-  if("asymp.UCL" %in% names(out)) {
-    names(out)[names(out) == "asymp.UCL"] <- "95% CI Upper"
-  }
+  # think about how we want to name the CI columns. Now it may be more clear these are distinct from the Odds ratio 95% CI
+  # if("asymp.LCL" %in% names(out)) {
+  #   names(out)[names(out) == "asymp.LCL"] <- "95% CI Lower"
+  # }
+  # if("asymp.UCL" %in% names(out)) {
+  #   names(out)[names(out) == "asymp.UCL"] <- "95% CI Upper"
+  # }
 
   out
 }
+
 
 # --- Two way interaction effects post hoc investigations ---
 
@@ -97,7 +104,7 @@ lst_results = function(two_way_model, three_way_model, outcome_var) {
   # estimated marginal means for rater type within each sex
   emm = as.data.frame(get_emm_rater_sex(two_way_model)),
 
-  contrast_emm_sexes = 
+  contrast_emm_sex = 
     contrast_with_unadj(
       get_emm_rater_sex(two_way_model),
       method = "pairwise",
@@ -105,7 +112,7 @@ lst_results = function(two_way_model, three_way_model, outcome_var) {
       adjust = "fdr"
     ),
 
-  contrast_sexes_pgs_2sd = 
+  contrast_sex_pgs_2sd = 
     contrast_with_unadj(
       get_emm_rater_sex(two_way_model, at = list(PGS_scaled = 2)), # this is the contrast at 2SD above the mean of PGS
       method = "pairwise",
@@ -127,7 +134,7 @@ lst_results = function(two_way_model, three_way_model, outcome_var) {
     as.data.frame(get_eprob_rater_sex(two_way_model, outcome_var)),
 
   # pairwise contrasts between rater types within each sex for the estimated probabilities
-  contrast_prob_sexes =
+  contrast_prob_sex =
     contrast_with_unadj(
       get_eprob_rater_sex(two_way_model, outcome_var),
       method = "pairwise",
@@ -135,7 +142,7 @@ lst_results = function(two_way_model, three_way_model, outcome_var) {
       adjust = "fdr"
     ),
   
-  contrast_prob_raters =
+  contrast_prob_rater =
     contrast_with_unadj(
       get_eprob_rater_sex(two_way_model, outcome_var),
       method = "pairwise",
@@ -148,7 +155,7 @@ lst_results = function(two_way_model, three_way_model, outcome_var) {
     as.data.frame(get_slopes_three_way(three_way_model)),
 
   # pairwise contrast between sexes of pgs association with probability of autism score ordinal within each rater type
-  `3_way_contrast_sexes` =
+  `3_way_contrast_sex` =
     contrast_with_unadj(
       get_slopes_three_way(three_way_model),
       method = "pairwise",
@@ -157,7 +164,7 @@ lst_results = function(two_way_model, three_way_model, outcome_var) {
     ),
 
   # pairwise contrast between rater types of pgs association with probability of autism score ordinal within
-  `3_way_contrast_raters` =
+  `3_way_contrast_rater` =
     contrast_with_unadj(
       get_slopes_three_way(three_way_model),
       method = "pairwise",
@@ -173,7 +180,7 @@ get_parent_child_dyad = function(model_fit) {
   emm_parent_subset <- emmeans(
     model_fit, 
     ~ rater_type * sex, 
-    at = list(rater_type = c("m12","v12")),
+    at = list(rater_type = c("Mother", "Father")),
     mode = "latent",
     cov.reduce = mean
   )
@@ -190,16 +197,19 @@ drop_df_columns <- function(list_of_tables) {
 post = lst_results(fit_m3, fit_m4, "autism_score_ordinal")
 post_sensitivity = lst_results(fit_m3_sensitivity, fit_m4_sensitivity, "autism_score_ordinal_sensitivity")
 post_sensitivity_all_raters = lst_results(fit_m3_sensitivity_all_raters, fit_m4_sensitivity_all_raters, "autism_score_ordinal_sensitivity")
+post_sensitivity_ysr_12 = lst_results(fit_m3_sensitivity_ysr_12, fit_m4_sensitivity_ysr_12, "autism_score_ordinal")
 
 contrast_sex_dyads = contrast_with_unadj(get_parent_child_dyad(fit_m3), method = list("same_vs_cross" = c(-1, 1, 1, -1))) # p value for whether incongruency effect exists
 contrast_sex_dyads_sensitivity = contrast_with_unadj(get_parent_child_dyad(fit_m3_sensitivity), method = list("same_vs_cross" = c(-1, 1, 1, -1))) 
 contrast_sex_dyads_sensitivity_all_raters = contrast_with_unadj(get_parent_child_dyad(fit_m3_sensitivity_all_raters), method = list("same_vs_cross" = c(-1, 1, 1, -1))) 
+contrast_sex_dyads_sensitivity_ysr_12 = contrast_with_unadj(get_parent_child_dyad(fit_m3_sensitivity_ysr_12), method = list("same_vs_cross" = c(-1, 1, 1, -1)))
 
 # append contrast_sex_dyads in one table
 all_contrast_sex_dyads = rbind(
   contrast_sex_dyads %>% mutate(dataset = "main"),
   contrast_sex_dyads_sensitivity %>% mutate(dataset = "sensitivity"),
-  contrast_sex_dyads_sensitivity_all_raters %>% mutate(dataset = "sensitivity_all_raters")
+  contrast_sex_dyads_sensitivity_all_raters %>% mutate(dataset = "sensitivity_all_raters"),
+  contrast_sex_dyads_sensitivity_ysr_12 %>% mutate(dataset = "sensitivity_ysr_12")
 ) %>%
   select(dataset, everything()) # move dataset column to the front
 
@@ -208,10 +218,12 @@ all_contrast_sex_dyads = select(all_contrast_sex_dyads, -contains("df"))
 post <- drop_df_columns(post)
 post_sensitivity <- drop_df_columns(post_sensitivity)
 post_sensitivity_all_raters <- drop_df_columns(post_sensitivity_all_raters)
+post_sensitivity_ysr_12 <- drop_df_columns(post_sensitivity_ysr_12)
 
 # rename sheets in post, post_sensitivity, and post_sensitivity_all_raters to have a postfix indicating the dataset
 names(post_sensitivity) <- paste0(names(post_sensitivity), "_sens")
 names(post_sensitivity_all_raters) <- paste0(names(post_sensitivity_all_raters), "_sens_all")
+names(post_sensitivity_ysr_12) <- paste0(names(post_sensitivity_ysr_12), "_sens_ysr12")
 
 # save results
 dir.create("results/post_hoc_investigations", showWarnings = FALSE, recursive = TRUE) # create directory if it doesn't exist
@@ -219,5 +231,5 @@ openxlsx::write.xlsx(all_contrast_sex_dyads, "results/post_hoc_investigations/co
 openxlsx::write.xlsx(post, "results/post_hoc_investigations/post.xlsx") # save as xlsx
 openxlsx::write.xlsx(post_sensitivity, "results/post_hoc_investigations/post_sensitivity.xlsx") # save as xlsx
 openxlsx::write.xlsx(post_sensitivity_all_raters, "results/post_hoc_investigations/post_sensitivity_all_raters.xlsx") # save as xlsx
-
+openxlsx::write.xlsx(post_sensitivity_ysr_12, "results/post_hoc_investigations/post_sensitivity_ysr_12.xlsx") # save as xlsx
 

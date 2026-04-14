@@ -8,7 +8,7 @@ geno_cols_general = c("FISNumber",
                       "PC1_1KG", "PC2_1KG", "PC3_1KG", "PC4_1KG", "PC5_1KG", "PC6_1KG", "PC7_1KG", "PC8_1KG", "PC9_1KG", "PC10_1KG")
 
 # general columns phenotype data
-pheno_cols_general = c("FISNumber", "sex", "FamilyNumber", "twzyg", "invjrm12", "invjrv12", "invjrt12", "invjrs14", "invjr_ysr_c12", "invjr_ysr_ae2", "invjr_ysr_bs2") # TODO: , "date_of_assessment"
+pheno_cols_general = c("FISNumber", "sex", "FamilyNumber", "twzyg")
 
 # group columns by rater in phenotype data for the So et al. items
 items_m12 = c( "q1m12", "q9m12", "q17m12", "q42m12", "q62m12", "q66m12", "q79m12", "q80m12", "q84m12", "q111m12")
@@ -39,7 +39,7 @@ items_c12 = c("q1y_c12", "q9y_c12", "q17y_c12", "q42y_c12", "q62y_c12", "q66y_c1
 pheno_cols_mother = c("agem12", "in_YS_12M", "invjrm12")
 pheno_cols_father = c("agev12", "in_YS_12V", "invjrv12")
 pheno_cols_teacher = c("agetrf12", "in_YS_TRF12", "genderlkrt12", "invjrt12")
-pheno_cols_ysr = c("ages14", "in_YS_DHBQ14", "invjrs14", "invjr_ysr_c12", "invjr_ysr_ae2", "invjr_ysr_bs2")
+pheno_cols_ysr = c("ages14", "in_YS_DHBQ14", "invjrs14")
 pheno_cols_ysr12 = c("age_ysr_c12", "age_ysr_ae2", "age_ysr_bs2", "in_YE_COG12", "in_YE_ATTEF2", "in_YC_BS2", "invjr_ysr_c12", "invjr_ysr_ae2", "invjr_ysr_bs2") # this is for the sensitivity analysis of ysr at age 12 where we will create a new variable with the sum of the items of the ysr at age 12 and the items of the bs2, ae2 and c12 which are available in the projects that contain ysr at age 12
 
 # combine the wanted columns from the phenotype data

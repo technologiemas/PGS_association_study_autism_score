@@ -274,6 +274,7 @@ plot_barplot_predicted_probabilities <- function(model_fit = fit_m3, outcome_var
     )
   } 
 
+
 # --- load models ---
 
 fit_m3 <- readRDS("results/models/fit_m3_clmm.rds")
@@ -285,7 +286,12 @@ fit_m4_sensitivity <- readRDS("results/models/sensitivity/fit_m4_clmm_sensitivit
 fit_m3_sensitivity_all_raters <- readRDS("results/models/sensitivity/fit_m3_clmm_sensitivity_all_raters.rds")
 fit_m4_sensitivity_all_raters <- readRDS("results/models/sensitivity/fit_m4_clmm_sensitivity_all_raters.rds")
 
+fit_m3_ysr_12 = readRDS("results/models/sensitivity/fit_ysr_12_m3_clmm_sensitivity.rds") # with the ysr at age 12 included
+fit_m4_ysr_12 = readRDS("results/models/sensitivity/fit_ysr_12_m4_clmm_sensitivity.rds") 
+
+
 # --- create plots ---
+
 # main models
 res_m3 <- get_rater_sex_emmeans(fit_m3, outcome_var = "autism_score_ordinal")
 df_m4 <- get_three_way_emmeans(fit_m4, outcome_var = "autism_score_ordinal")
@@ -319,12 +325,22 @@ p_m4_three_way_high_only_sensitivity_all_raters <- plot_three_way_high_only(df_m
 p_m4_forest_sensitivity_all_raters <- plot_forest_odds_ratios(fit_m4_sensitivity_all_raters, "Model 4")
 
 
+res_m3_ysr12 <- get_rater_sex_emmeans(fit_m3_ysr_12, outcome_var = "autism_score_ordinal") 
+df_m4_ysr12 <- get_three_way_emmeans(fit_m4_ysr_12, outcome_var = "autism_score_ordinal") 
+
+p_m3_prob_ysr12 <- plot_pred_prob_rater_sex(res_m3_ysr12$probs, "Model 3", outcome_var = "autism_score_ordinal")
+p_m3_contr_ysr12 <- plot_pairwise_contrasts_rater_sex(res_m3_ysr12$contrasts, "Model 3", outcome_var = "autism_score_ordinal")
+p_m4_three_way_ysr12 <- plot_three_way(df_m4_ysr12, "Model 4", outcome_var = "autism_score_ordinal")
+p_m4_three_way_high_only_ysr12 <- plot_three_way_high_only(df_m4_ysr12, "Model 4", outcome_var = "autism_score_ordinal")
+
+
 # save plots
 
 dir.create("results/figures", showWarnings = FALSE)
 dir.create("results/figures/sensitivity", showWarnings = FALSE)
 dir.create("results/figures/sensitivity_all_raters", showWarnings = FALSE)
 
+# TODO: save all relevant figures
 # ggsave(
 #   "results/figures/pred_prob_rater_sex.png",
 #   p_m3_prob,
@@ -332,6 +348,14 @@ dir.create("results/figures/sensitivity_all_raters", showWarnings = FALSE)
 #   width = 8.4, height = 6, units = "cm",
 #   dpi = 600, scale = 2
 # )
+
+ggsave(
+  "results/figures/ysr_12.png",
+  p_m3_prob_ysr12,
+  device = "png",
+  width = 8.4, height = 6, units = "cm",
+  dpi = 600, scale = 2
+)
 
 # ggsave(
 #   "results/figures/pairwise_contrast_rater_sex.png",

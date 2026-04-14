@@ -41,14 +41,14 @@ icc_overall = (v[1] + v[2]) / sum(v)
 
 
 # effect_sample_size
-eff_n = function(n, m_family, m_participant, icc_family, icc_participant) {
-  n / ((1 + (m_family - 1) * icc_family) * (1 + (m_participant - 1) * icc_participant))
-}
+# eff_n = function(n, m_family, m_participant, icc_family, icc_participant) {
+#   n / ((1 + (m_family - 1) * icc_family) * (1 + (m_participant - 1) * icc_participant))
+# }
 
-eff_n = function (n, m_family, m_participant, icc_overall) {
-  n / (1 + (m_family * m_participant - 1) * icc_overall)
-  n / DE
-}
+# eff_n = function (n, m_family, m_participant, icc_overall) {
+#   n / (1 + (m_family * m_participant - 1) * icc_overall)
+#   n / DE
+# }
 
 eff_n = function(n, m_family, m_participant, icc_family, icc_participant) {
   DE =  1 + (m_family - 1) * icc_family + (m_participant - 1) * icc_participant

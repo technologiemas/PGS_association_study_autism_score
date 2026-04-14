@@ -18,6 +18,7 @@ data_teacher = readRDS("data/processed/02_data_teacher_clean.rds")
 # colors to use for the sexes
 colors = c("Male" = "#00C07B", "Female" = "#FFBB09")
 
+data_long_ysr12 = data_long # create a copy of data_long to keep the ysr at age 12 rater type for the sensitivity analyses including ysr at age 12
 data_long = data_long %>%
   filter(rater_type %in% c("Mother", "Father", "Teacher", "Self")) # filter out the ysr at age 12 rater type for the main analyses
 

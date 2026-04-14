@@ -11,7 +11,7 @@ source("scripts/_column_names.R")
 
 # loading in data
 # phenotype_file_path = "./data/raw/PHE_20250516_5023_YJS.sav" # old file
-phenotype_file_path = "./data/raw/amendment_data/PHE_20260331_5103_YJS.sav" # amendment file
+phenotype_file_path = "./data/raw/amendment_data/PHE_20260401_5103_YJS.sav" # amendment file
 genotype_file_path = "./data/raw/NTR-DSR-5023_AutismSpectrumDisorder_PMID30804558_MRG18_PedMergedWithScores.sav"
 genotype_file_path_amendment = "./data/raw/amendment_data/NTR-DSR-5103_AutismSpectrumDisorder_PMID30804558_MRG18_PedMergedWithScores.sav"
 
@@ -39,6 +39,7 @@ data = phenotype_data %>%
 
 # select the columns of interest from the genotype data
 genotype_data = genotype_data %>% select(all_of(geno_cols_general))
+genotype_data = unique(genotype_data) # for some reason all rows were duplicate in the genotype data I received
 
 # join the two data sets where data is present for both tables for each FISNumber 
 data = data %>% inner_join(genotype_data, by = "FISNumber")
@@ -49,11 +50,12 @@ data[data == -2] <- NA # inconsistent data
 data[data == -3] <- NA # no registration, unclear answer
 data[data == -9] <- NA # known or suspected transgender regarding sex
 
-# set datatypes of columns to integer where needed so the summing for the autism score goes correctly
+# set datatypes of columns correctly
 data <- data %>%
   mutate(across(all_of(c(items_m12, items_v12, items_t12, items_ysr14, items_c12, items_ae2, items_bs2)), as.integer)) %>%
-  mutate(across(all_of(c(in_YS_12M, in_YS_12V, in_YS_TRF12, in_YS_DHBQ14)), as.integer))
-
+  mutate(across(c(in_YS_12M, in_YS_12V, in_YS_TRF12, in_YS_DHBQ14), as.integer)) %>%
+  mutate(across(c(PLATFORM, FISNumber, FamilyNumber, sex), as.factor)) %>%
+  mutate(across(c(invjrm12, invjrv12, invjrt12, invjrs14, invjr_ysr_c12, invjr_ysr_ae2, invjr_ysr_bs2), as.integer))
 
 # --- we will run a sensitivity analysis in a subpopulation of projects where we have ysr at age 12 which we create here ---
 # we combine three projects within the NTR to create one ysr at age 12 entity, which requires merging some columns
@@ -83,11 +85,14 @@ for (i in seq_along(items_ysr12)) {
   data[[items_ysr12[i]]][all_na] <- NA
 }
 
+# create ages and date of assessment variables
 data[["ages12"]] = rowSums(data[, c("age_ysr_c12", "age_ysr_ae2", "age_ysr_bs2")], na.rm = TRUE) # combine the age variables
 data[["ages12"]][rowSums(is.na(data[, c("age_ysr_c12", "age_ysr_ae2", "age_ysr_bs2")])) == 3] <- NA # Force the all-NA rows back to NA
 data[["invjrs12"]] = rowSums(data[, c("invjr_ysr_c12", "invjr_ysr_ae2", "invjr_ysr_bs2")], na.rm = TRUE) # combine the date of  variables
 data[["invjrs12"]][rowSums(is.na(data[, c("invjr_ysr_c12", "invjr_ysr_ae2", "invjr_ysr_bs2")])) == 3] <- NA # Force the all-NA rows back to NA
 
+data = data %>%
+  select(-in_YE_COG12, -in_YE_ATTEF2, -in_YC_BS2, -age_ysr_c12, -age_ysr_ae2, -age_ysr_bs2, -invjr_ysr_c12, -invjr_ysr_ae2, -invjr_ysr_bs2, -all_of(items_bs2), -all_of(items_ae2), -all_of(items_c12)) # drop the original columns that we merged into the ysr at age 12 columns
 
 # --- creating the autism sum score and saving the datasets ---
 
@@ -129,15 +134,8 @@ data <- data %>%
 saveRDS(data, "data/processed/01_full_dataset.rds")
 
 
-
-table(!is.na(data$invjrm12))
-table(!is.na(phenotype_data$in_YS_12M))
-table(!is.na(phenotype_data$invjrm12))
-
-data_sub = data %>% filter(in_YS_12M == 1) 
-table(!is.na(data_sub$m12_aut_sum))
-table(!is.na(data_sub$invjrm12))
-table(!is.na(data_sub$agem12))
-table(!is.na(data_sub$P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1))
-table(!is.na(data_sub$PLATFORM))
-table(!is.na(data_sub$sex))
+# View(zap_labels(data) %>% filter(!is.na(ysr12_aut_sum)))
+# View(zap_labels(data) %>% filter(in_YS_12S == 1))
+# nrow(zap_labels(data) %>% filter(in_YS_12S == 1))
+# nrow(zap_labels(phenotype_data) %>% filter(!is.na(in_YE_ATTEF2)))
+# nrow(zap_labels(data) %>% filter(!is.na(in_YE_ATTEF2)))

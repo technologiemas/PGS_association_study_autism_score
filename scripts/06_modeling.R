@@ -15,9 +15,6 @@ source("scripts/_helper_functions.R")
 
 # --- LOAD DATA ---
 data_long = readRDS("data/processed/02_full_dataset_long.rds")
-data_long_ysr12 = data_long # for sensitivity analysis including ysr at age 12
-data_long = data_long %>%
-  filter(rater_type %in% c("Mother", "Father", "Teacher", "Self")) # filter out the ysr at age 12 rater type for the main analyses
 
 
 # --- PRE-PROCESSING & FORMATTING ---
@@ -29,7 +26,7 @@ data_long = data_long %>%
 
 # Scaling Continuous Variables
 # We scale PCs, PGS, and both versions of the continuous autism score (for linear models)
-vars_to_scale <- c("PGS", paste0("PC", 1:10), "autism_score", "autism_score_sensitivity", "age", "date_of_assessment_numeric")
+vars_to_scale <- c("PGS", paste0("PC", 1:10), "autism_score", "autism_score_sensitivity", "age", "date_of_assessment")
 
 data_long = data_long %>%
   mutate(across(all_of(vars_to_scale),
@@ -43,24 +40,30 @@ class(data_long$autism_score_ordinal)
 data_long_all_raters_present = data_long %>%
   filter(all_rater_present)
 
+# split datasets for sensitivity analysis including ysr at age 12
+data_long_ysr12 = data_long 
+data_long = data_long %>%
+  filter(rater_type %in% c("Mother", "Father", "Teacher", "Self")) # filter out the ysr at age 12 rater type for the main analyses
+
 
 # --- MODEL FORMULA DEFINITIONS ---
 
 # We define the right hand side of the formulas and later on paste them with the outcomes on the left hand size.
-rhs_m0 = "(1 | FamilyNumber) + (1 | FISNumber)"
+rhs_m0 = "(1 | FamilyNumber / FISNumber)" # random effect of families with nested individuals
 
 rhs_m1 = paste(rhs_m0, "+ PGS_scaled + sex + rater_type")
 
-rhs_m2 = paste(rhs_m1, "+ PLATFORM + age_scaled + date_of_assessment_numeric_scaled +",
+rhs_m2 = paste(rhs_m1, "+ PLATFORM + age_scaled + date_of_assessment_scaled +",
                paste0("PC", 1:10, "_scaled", collapse = " + "))
 
 rhs_m3 = paste(rhs_m2, "+ PGS_scaled * rater_type + PGS_scaled * sex + sex * rater_type")
 
 rhs_m4 = paste(rhs_m3, "+ PGS_scaled * rater_type * sex")
 
-rhs_m5 = paste(rhs_m4, "+ (PLATFORM + age_scaled + date_of_assessment_numeric_scaled +",
+rhs_m5 = paste(rhs_m4, "+ (PLATFORM + age_scaled + date_of_assessment_scaled +",
                paste0("PC", 1:10, "_scaled", collapse = " + "), 
                ") * (PGS_scaled + sex + rater_type)")
+              
 
 # --- Functions for running the models ---
 
@@ -128,6 +131,13 @@ fit_sub_m3 <- run_ordinal_clmm(m3_sens, data_long_all_raters_present)
 fit_sub_m4 <- run_ordinal_clmm(m4_sens, data_long_all_raters_present)
 fit_sub_m5 <- run_ordinal_clmm(m5_sens, data_long_all_raters_present)
 
+fit_ysr_12_m1 <- run_ordinal_clmm(m1_main, data_long_ysr12) # do we want m1_main or m1_sens??
+fit_ysr_12_m2 <- run_ordinal_clmm(m2_main, data_long_ysr12)
+fit_ysr_12_m3 <- run_ordinal_clmm(m3_main, data_long_ysr12)
+fit_ysr_12_m4 <- run_ordinal_clmm(m4_main, data_long_ysr12)
+fit_ysr_12_m5 <- run_ordinal_clmm(m5_main, data_long_ysr12)
+
+
 dir.create("results/models/sensitivity", showWarnings = FALSE, recursive = TRUE)
 
 # Save Full Data Sensitivity
@@ -143,5 +153,12 @@ saveRDS(fit_sub_m2, "results/models/sensitivity/fit_m2_clmm_sensitivity_all_rate
 saveRDS(fit_sub_m3, "results/models/sensitivity/fit_m3_clmm_sensitivity_all_raters.rds")
 saveRDS(fit_sub_m4, "results/models/sensitivity/fit_m4_clmm_sensitivity_all_raters.rds")
 saveRDS(fit_sub_m5, "results/models/sensitivity/fit_m5_clmm_sensitivity_all_raters.rds")
+
+# Save YSR12 Data Sensitivity
+saveRDS(fit_ysr_12_m1, "results/models/sensitivity/fit_ysr_12_m1_clmm_sensitivity.rds")
+saveRDS(fit_ysr_12_m2, "results/models/sensitivity/fit_ysr_12_m2_clmm_sensitivity.rds")
+saveRDS(fit_ysr_12_m3, "results/models/sensitivity/fit_ysr_12_m3_clmm_sensitivity.rds")
+saveRDS(fit_ysr_12_m4, "results/models/sensitivity/fit_ysr_12_m4_clmm_sensitivity.rds")
+saveRDS(fit_ysr_12_m5, "results/models/sensitivity/fit_ysr_12_m5_clmm_sensitivity.rds")
 
 message("All models fitted and saved successfully.")

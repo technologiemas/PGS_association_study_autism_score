@@ -27,15 +27,14 @@ for (item in items_ysr12) {print(table(data[[item]]))}
 # boxplot of ages to check for outliers
 boxplot(data$ages14, main = "Self", ylab = "Age") # very high values. Older siblings are in the dataset
 boxplot(data$agem12, main = "Mother", ylab = "Age") 
-boxplot(data$agev12, main = "Father", ylab = "Age")
 boxplot(data$agetrf12, main = "Teacher", ylab = "Age") # very low values. Younger siblings? Weird.
 table(data$agetrf12) # very low values. Younger siblings? Weird.
 
 boxplot(data$ages12, main = "Self") # very high values. Older siblings are in the dataset
 
 # looking at an effect of date/birth cohort on the autism scores
-boxplot(data$m12_aut_sum ~ data$invjrm12, main = "Mother", xlab = "Date of assessment (numeric)", ylab = "Autism score")
-lm(data$m12_aut_sum ~ data$invjrm12)
+# boxplot(data$m12_aut_sum ~ data$invjrm12, main = "Mother", xlab = "Date of assessment (numeric)", ylab = "Autism score")
+# lm(data$m12_aut_sum ~ data$invjrm12)
 
 
 # --- cleaning the data ---
@@ -45,7 +44,7 @@ lm(data$m12_aut_sum ~ data$invjrm12)
 data <- data %>%
   mutate( # Has to be done with mutate to not drop entire rows
     across( # the lower bound
-      c(agem12, agev12, agetrf12),
+      c(agem12, agev12, agetrf12, ages12),
       ~ {
         m <- mean(.x, na.rm = TRUE)
         # s <- sd(.x, na.rm = TRUE)
@@ -98,18 +97,9 @@ nrow(data)
 data$sex <- factor(data$sex, levels = c(1, 2), labels = c("Male", "Female"))
 data$genderlkrt12 <- factor(data$genderlkrt12, levels = c(1, 2), labels = c("Male", "Female"))
 
-# set datatypes of relevant variables
-data <- data %>%
-  mutate(across(c(PLATFORM, FISNumber, FamilyNumber), as.factor))
-
 # creating a check if all raters (for the main analysis) are present for this individual. Used in later analyses
 data <- data %>%
   mutate(all_rater_present = ifelse(!is.na(m12_aut_sum) & !is.na(v12_aut_sum) & !is.na(t12_aut_sum) & !is.na(ysr14_aut_sum), TRUE, FALSE))
-
-# # transforming dates to be linear so the model can handle it TODO
-# data = data %>%
-#   mutate(date_of_assessment = as.Date(date_of_assessment, format = "%d-%m-%Y"),
-#          date_of_assessment_numeric = as.numeric(date_of_assessment))
 
 # check data types
 sapply(data, class)
@@ -140,7 +130,7 @@ data_mother  <- data_mother %>% select(-EUR_1KG_Outlier, -all_of(items_m12))
 data_father  <- data_father %>% select(-EUR_1KG_Outlier, -all_of(items_v12))
 data_teacher <- data_teacher %>% select(-EUR_1KG_Outlier, -all_of(items_t12))
 data_ysr     <- data_ysr %>% select(-EUR_1KG_Outlier, -all_of(items_ysr14))
-data <- data %>% select(-in_YS_12M, -in_YS_12V, -in_YS_TRF12, -in_YS_DHBQ14, -in_YS_12S, -in_YS_ATTEF2, -in_YS_COG12, -in_YS_BS2, -EUR_1KG_Outlier, -all_of(items_m12), -all_of(items_v12), -all_of(items_t12), -all_of(items_ysr14), -all_of(items_ysr12)) # clean out the data a bit
+data <- data %>% select(-in_YS_12M, -in_YS_12V, -in_YS_TRF12, -in_YS_DHBQ14, -in_YS_12S, -EUR_1KG_Outlier, -all_of(items_m12), -all_of(items_v12), -all_of(items_t12), -all_of(items_ysr14), -all_of(items_ysr12)) # clean out the data a bit
 
 
 # --- creating long dataset with duplicate FISNumbers, one column for autism_score and one for rater_type ---
@@ -193,27 +183,34 @@ date_assessment_map <- tibble(
 age_mapped <- left_join(age_long, age_map, by = "age_key")
 date_mapped <- left_join(date_long, date_assessment_map, by = "date_key")
 
-data_long <- left_join(age_mapped, score_long)
+data_long <- left_join(age_mapped, score_long) # add by = c("FISNumbers", "rater_type")?
 data_long <- left_join(data_long, score_long_sensitivity)
-data_long <- left_join(data_long, date_mapped, by = c("FISNumbers", "rater_type")) # test this
+data_long <- left_join(data_long, date_mapped) # test this
 
 # deselect unnessesary columns that have been merged above
-data_long <- data_long %>% select(-invjrm12, -invjrv12, -invjrt12, -invjrs14, -invjrm12, -invjr_ysr_c12, -invrjr_ysr_ae2, -invrjr_ysr_bs2, -date_key, -age_key, -agem12, -agev12, -agetrf12, -ages14, -m12_aut_sum, -v12_aut_sum, -t12_aut_sum, -ysr14_aut_sum, -m12_aut_sum_sensitivity, -v12_aut_sum_sensitivity, -t12_aut_sum_sensitivity, -ysr14_aut_sum_sensitivity) 
+data_long <- data_long %>% select(-invjrm12, -invjrv12, -invjrt12, -invjrs14, -invjrs12, -invjrm12, -date_key, -age_key, -agem12, -agev12, -agetrf12, -ages14, -ages12, -m12_aut_sum, -v12_aut_sum, -t12_aut_sum, -ysr14_aut_sum, -m12_aut_sum_sensitivity, -v12_aut_sum_sensitivity, -t12_aut_sum_sensitivity, -ysr14_aut_sum_sensitivity) 
 
-data_long$rater_type <- factor(data_long$rater_type, levels = c("m12", "v12", "t12", "ysr14", "ysr12"), labels = c("Mother", "Father", "Teacher", "Self", "Self at age 12")) # convert rater_type to factor
+data_long$rater_type <- factor(data_long$rater_type, levels = c("m12", "v12", "t12", "ysr14", "ysr12"), labels = c("Mother", "Father", "Teacher", "Self", "Self_age_12")) # convert rater_type to factor
 
 
 # --- Some more filtering and creating the ordinal autism score variable ---
 
-# filtering data_long to remove rows with NA values, cleans up the data a lot
-nrow(data_long)
+# filtering data_long to remove rows with NA values, cleans up the data and gives accurate sample sizes in descriptives.R
+nrow(data_long) 
 data_long = data_long %>% 
   filter(!is.na(age),
          !is.na(autism_score),
-         !is.na(autism_score_sensitivity),
          !is.na(date_of_assessment),
-         !is.na(PLATFORM))
+         !is.na(PLATFORM),
+         !is.na(rater_type),
+         !is.na(sex),
+         !is.na(PC1_1KG), !is.na(PC2_1KG), !is.na(PC3_1KG), !is.na(PC4_1KG), !is.na(PC5_1KG), !is.na(PC6_1KG), !is.na(PC7_1KG), !is.na(PC8_1KG), !is.na(PC9_1KG), !is.na(PC10_1KG),
+         !is.na(P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1),
+         !is.na(FamilyNumber), 
+         !is.na(FISNumber)
+         )
 nrow(data_long)
+
 
 # ordinalize autism score into three levels: 0, 1-3, 4+
 data_long = data_long %>%
@@ -242,5 +239,6 @@ saveRDS(data_ysr, "data/processed/02_data_ysr_clean.rds")
 saveRDS(data, "data/processed/02_full_dataset_clean.rds")
 saveRDS(data_long, "data/processed/02_full_dataset_long.rds")
 saveRDS(data_all_items, "data/processed/02_data_all_items.rds")
+
 
 

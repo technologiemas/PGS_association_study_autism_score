@@ -12,7 +12,6 @@ fit_m1 <- readRDS("results/models/fit_m1_clmm.rds")
 fit_m2 <- readRDS("results/models/fit_m2_clmm.rds")
 fit_m3 <- readRDS("results/models/fit_m3_clmm.rds")
 fit_m4 <- readRDS("results/models/fit_m4_clmm.rds")
-fit_m4b <- readRDS("results/models/fit_m4b_clmm.rds")
 fit_m5 <- readRDS("results/models/fit_m5_clmm.rds")
 
 # uncomment these to see results of sensitivity analysis models
@@ -61,3 +60,8 @@ car::vif(fit_m4)
 Anova(fit_m3) 
 Anova(fit_m4)
 
+
+correlations_predictors = cov2cor(vcov(fit_m3))
+
+library(openxlsx)
+openxlsx::write.xlsx(correlations_predictors, "results/correlations_predictors_m3.xlsx")

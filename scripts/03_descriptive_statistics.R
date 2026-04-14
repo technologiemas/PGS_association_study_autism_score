@@ -13,10 +13,13 @@ library(openxlsx)
 data = readRDS("data/processed/02_full_dataset_clean.rds")
 data_long = readRDS("data/processed/02_full_dataset_long.rds")
 
+#TODO
+data_long_ysr12 = data_long # create a copy of data_long to keep the ysr at age 12 rater type for the sensitivity analyses including ysr at age 12
 data_long = data_long %>%
   filter(rater_type %in% c("Mother", "Father", "Teacher", "Self")) # filter out the ysr at age 12 rater type for the main analyses
 
-# --- distribution of age in the sample ---
+
+# --- distribution of age and date of assessment in the sample ---
 
 data_mother = data_long %>%
 filter(rater_type == "Mother")
@@ -28,6 +31,9 @@ hist(data_mother$age)
 hist(data_self$age, breaks = 30)
 table(data_mother$age)
 table(data_self$age)
+
+hist(data_mother$date_of_assessment)
+hist(data_self$date_of_assessment)
 
 
 # --- distribution of phenotype and PGS data ---
@@ -72,6 +78,8 @@ calculate_descriptives_phenotype <- function(data_long, phenotype) {
       n         = sum(!is.na({{phenotype}})),
       `age (mean)`       = mean(age, na.rm = TRUE),
       `age (sd)`         = sd(age, na.rm = TRUE),
+      `date of assessment(mean)` = mean(date_of_assessment, na.rm = TRUE),
+      `date of assessment (sd)`  = sd(date_of_assessment, na.rm = TRUE),
       `autism score (mean)`      = mean({{phenotype}}, na.rm = TRUE),
       sd        = sd({{phenotype}},   na.rm = TRUE),
       skewness  = skewness({{phenotype}},  na.rm = TRUE),
@@ -99,8 +107,8 @@ calculate_descriptives_genotype <- function(data, PGS) {
 
   # filter on unique FISNumber to avoid duplicates in the data (as the data is in long format with multiple rows per participant)
   data_unique = data %>%
-    group_by(FISNumber) %>%
-    slice(1) %>%
+    group_by(`FISNumber`) %>%
+    dplyr::slice(1) %>%
     ungroup() 
 
   # one t-test per rater_type
@@ -141,6 +149,7 @@ data_wide = data %>%
 cor_matrix_females = cor(select(data_wide, m12_aut_sum_Female, v12_aut_sum_Female, t12_aut_sum_Female, ysr14_aut_sum_Female), use = "pairwise.complete.obs")
 cor_matrix_males = cor(select(data_wide, m12_aut_sum_Male, v12_aut_sum_Male, t12_aut_sum_Male, ysr14_aut_sum_Male), use = "pairwise.complete.obs")
 cor_all = cor(select(data, m12_aut_sum, v12_aut_sum, t12_aut_sum, ysr14_aut_sum), use = "pairwise.complete.obs")
+cor_matrix_with_sensitivity = cor(select(data, m12_aut_sum, m12_aut_sum_sensitivity, v12_aut_sum, v12_aut_sum_sensitivity, t12_aut_sum, t12_aut_sum_sensitivity, ysr14_aut_sum, ysr14_aut_sum_sensitivity), use = "pairwise.complete.obs")
 
 # count the number of individuals for which each rater type is available for that individual
 data_overlap = data %>%
