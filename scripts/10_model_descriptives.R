@@ -5,6 +5,8 @@ gc()
 
 library(psych)
 library(broom.mixed)
+library(emmeans)
+library(openxlsx)
 
 fit_m3 <- readRDS("results/models/fit_m3_clmm.rds")
 fit_m4 <- readRDS("results/models/fit_m4_clmm.rds")
@@ -12,6 +14,7 @@ fit_m5 <- readRDS("results/models/fit_m5_clmm.rds")
 mf_3 <- model.frame(fit_m3)
 mf_4 <- model.frame(fit_m4)
 mf_5 <- model.frame(fit_m5)
+
 
 psych::describe(mf_3)
 # describe for male and female separately
@@ -67,13 +70,19 @@ model_results_m3 <- list_model_results(fit_m3)
 model_results_m4 <- list_model_results(fit_m4)
 model_results_m5 <- list_model_results(fit_m5)
 
+
 lst_results <- list(
   "model_3_output" = model_results_m3,
   "model_4_output" = model_results_m4,
+  "model_4_joint_tests" = joint_tests(fit_m4,
+            nuisance = c("PC1_scaled",  "PC2_scaled",  "PC3_scaled",
+                         "PC4_scaled",  "PC5_scaled",  "PC6_scaled",
+                         "PC7_scaled",  "PC8_scaled",  "PC9_scaled",
+                         "PC10_scaled",
+                         "PLATFORM")),
   "model_5_output" = model_results_m5,
   "autism_scores_lvls_distribution" = distribution_scores_m3
 )
 
 openxlsx::write.xlsx(lst_results, "results/model_output.xlsx") 
-
 

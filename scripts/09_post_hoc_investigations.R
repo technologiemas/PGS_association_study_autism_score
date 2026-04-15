@@ -25,45 +25,59 @@ fit_m3_sensitivity_ysr_12 <- readRDS("results/models/sensitivity/fit_ysr_12_m3_c
 fit_m4_sensitivity_ysr_12 <- readRDS("results/models/sensitivity/fit_ysr_12_m4_clmm_sensitivity.rds")
 
 
-# helper function to get contrasts with unadjusted p-values. This function was made with help of AI but seems to work well
-contrast_with_unadj <- function(emm_obj, ..., adjust = "fdr") {
-  ctr <- contrast(emm_obj, ..., adjust = "none")
+calc_fdr_p <- function(emm_obj, method = "fdr") {
+  out = as.data.frame(emm_obj) %>%
+  rename(any_of(c(
+      "p_unadjusted"   = "p.value",
+      "p_unadjusted"   = "p-value",
+      "p_unadjusted"   = "p_value"
+  )))
 
-  unadj <- summary(ctr, adjust = "none")
-  adj   <- summary(ctr, adjust = adjust)
-
-  out <- as.data.frame(adj)
-  out$p_unadjusted <- unadj$p.value
-
-  names(out)[names(out) == "p.value"] <- paste0("p_", adjust)
-
-  if(emm_obj@misc$estName == "prob") {
-    out <- out %>%
-      mutate(
-        `Prob. Difference` = estimate,
-        SE = SE,
-        `Prob 95% CI Lower` = estimate - 1.96 * SE,
-        `Prob 95% CI Upper` = estimate + 1.96 * SE
-      ) %>%
-      select(-estimate) # remove the original 'estimate' column as it's now represented as 'Probability'
-  }
-
-    # ---- Add odds ratios (only meaningful on latent/logit scale) ----
-  if("estimate" %in% names(out)) {
-    out$`Odds Ratio` <- exp(out$estimate)
-    out$`OR 95% CI Lower` <- exp(out$estimate - 1.96 * out$SE)
-    out$`OR 95% CI Upper` <- exp(out$estimate + 1.96 * out$SE)
-  }
-
-  # think about how we want to name the CI columns. Now it may be more clear these are distinct from the Odds ratio 95% CI
-  # if("asymp.LCL" %in% names(out)) {
-  #   names(out)[names(out) == "asymp.LCL"] <- "95% CI Lower"
-  # }
-  # if("asymp.UCL" %in% names(out)) {
-  #   names(out)[names(out) == "asymp.UCL"] <- "95% CI Upper"
-  # }
+  out$p_fdr <- p.adjust(out$p_unadjusted, method = method)
 
   out
+}
+
+rename_prob_columns = function(emm_obj) {
+  out <- as.data.frame(emm_obj)
+
+  out <- out %>%
+    mutate(
+      `Probability Difference` = estimate,
+      SE = SE,
+      `Prob 95% CI Lower` = estimate - 1.96 * SE,
+      `Prob 95% CI Upper` = estimate + 1.96 * SE
+    ) %>%
+    select(-estimate, -SE) # remove the original 'estimate' column as it's now represented as 'Probability'
+
+  out
+}
+
+rename_columns <- function(emm_obj) {
+  out <- as.data.frame(emm_obj)
+  
+  target_col <- intersect(c("estimate", "emmean", "PGS_scaled.trend"), names(out))[1]
+
+  if (!is.na(target_col)) { # else it is a log-odds estimate
+    out <- out %>%
+      mutate(
+        `Odds Ratio`      = exp(.data[[target_col]]),
+        `OR 95% CI Lower` = exp(.data[[target_col]] - 1.96 * SE),
+        `OR 95% CI Upper` = exp(.data[[target_col]] + 1.96 * SE)
+      )
+  }
+  
+  out <- out %>%
+    rename(any_of(c(
+      "p-value"                            = "p.value",
+      "Estimated Probability"              = "prob",
+      "Estimate difference (log-odds)"     = "estimate",
+      "Estimated Marginal Mean (log-odds)" = "emmean",
+      "Slope of PGS (scaled) in log-odds"  = "PGS_scaled.trend"
+    ))) %>%
+    select(-contains("asymp.LCL"), -contains("asymp.UCL"))
+  
+  return(out)
 }
 
 
@@ -96,81 +110,76 @@ get_slopes_three_way <- function(fit_model) {
     var = "PGS_scaled",
     mode = "latent"
   )
-}
+} 
 
 # collect results and save as excel files
 lst_results = function(two_way_model, three_way_model, outcome_var) {
   list(
-  # estimated marginal means for rater type within each sex
-  emm = as.data.frame(get_emm_rater_sex(two_way_model)),
+
+  emm = summary(get_emm_rater_sex(two_way_model), infer = c(TRUE, TRUE)) %>% calc_fdr_p() %>% rename_columns(),
 
   contrast_emm_sex = 
-    contrast_with_unadj(
+    contrast(
       get_emm_rater_sex(two_way_model),
       method = "pairwise",
       by = "rater_type",
       adjust = "fdr"
-    ),
+    ) %>% calc_fdr_p() %>% rename_columns(),
 
   contrast_sex_pgs_2sd = 
-    contrast_with_unadj(
+    contrast(
       get_emm_rater_sex(two_way_model, at = list(PGS_scaled = 2)), # this is the contrast at 2SD above the mean of PGS
       method = "pairwise",
       by = "rater_type",
       adjust = "fdr"
-    ),
+    ) %>% calc_fdr_p() %>% rename_columns(),
 
   # pairwise contrasts between rater types within each sex
   contrast_emm_raters =
-    contrast_with_unadj(
+    contrast(
       get_emm_rater_sex(two_way_model),
       method = "pairwise",
       by = "sex",
-      adjust = "fdr"
-    ),
+    ) %>% calc_fdr_p() %>% rename_columns(),
 
   # cumulative probabilities for each autism score level (no, low, high) within each rater type and sex
   prob_rater_sex =
-    as.data.frame(get_eprob_rater_sex(two_way_model, outcome_var)),
+    summary(get_eprob_rater_sex(two_way_model, outcome_var), infer = c(TRUE, TRUE)) %>% calc_fdr_p() %>% rename_columns(),
 
   # pairwise contrasts between rater types within each sex for the estimated probabilities
   contrast_prob_sex =
-    contrast_with_unadj(
+    contrast(
       get_eprob_rater_sex(two_way_model, outcome_var),
       method = "pairwise",
       by = c("rater_type", outcome_var),
-      adjust = "fdr"
-    ),
+    ) %>% calc_fdr_p() %>% rename_prob_columns(),
   
   contrast_prob_rater =
-    contrast_with_unadj(
+    contrast(
       get_eprob_rater_sex(two_way_model, outcome_var),
       method = "pairwise",
       by = c("sex", outcome_var),
-      adjust = "fdr"
-    ),
+    ) %>% calc_fdr_p() %>% rename_prob_columns(),
 
   # pgs association with latent autism score ordinal within each rater type and sex
   `3_way_emtrends` =
-    as.data.frame(get_slopes_three_way(three_way_model)),
+    summary(get_slopes_three_way(three_way_model), infer = c(TRUE, TRUE)) %>% calc_fdr_p() %>% rename_columns(), 
 
   # pairwise contrast between sexes of pgs association with probability of autism score ordinal within each rater type
   `3_way_contrast_sex` =
-    contrast_with_unadj(
+    contrast(
       get_slopes_three_way(three_way_model),
       method = "pairwise",
       by = "rater_type",
-      adjust = "fdr"
-    ),
+    ) %>% calc_fdr_p() %>% rename_columns(),
 
   # pairwise contrast between rater types of pgs association with probability of autism score ordinal within
   `3_way_contrast_rater` =
-    contrast_with_unadj(
+    contrast(
       get_slopes_three_way(three_way_model),
       method = "pairwise",
       by = "sex",
-      adjust = "fdr"
-    )
+    ) %>% calc_fdr_p() %>% rename_columns()
 )}
 
 
@@ -199,10 +208,10 @@ post_sensitivity = lst_results(fit_m3_sensitivity, fit_m4_sensitivity, "autism_s
 post_sensitivity_all_raters = lst_results(fit_m3_sensitivity_all_raters, fit_m4_sensitivity_all_raters, "autism_score_ordinal_sensitivity")
 post_sensitivity_ysr_12 = lst_results(fit_m3_sensitivity_ysr_12, fit_m4_sensitivity_ysr_12, "autism_score_ordinal")
 
-contrast_sex_dyads = contrast_with_unadj(get_parent_child_dyad(fit_m3), method = list("same_vs_cross" = c(-1, 1, 1, -1))) # p value for whether incongruency effect exists
-contrast_sex_dyads_sensitivity = contrast_with_unadj(get_parent_child_dyad(fit_m3_sensitivity), method = list("same_vs_cross" = c(-1, 1, 1, -1))) 
-contrast_sex_dyads_sensitivity_all_raters = contrast_with_unadj(get_parent_child_dyad(fit_m3_sensitivity_all_raters), method = list("same_vs_cross" = c(-1, 1, 1, -1))) 
-contrast_sex_dyads_sensitivity_ysr_12 = contrast_with_unadj(get_parent_child_dyad(fit_m3_sensitivity_ysr_12), method = list("same_vs_cross" = c(-1, 1, 1, -1)))
+contrast_sex_dyads = contrast(get_parent_child_dyad(fit_m3), method = list("same_vs_cross" = c(-1, 1, 1, -1))) %>% calc_fdr_p() %>% rename_columns() # p value for whether incongruency effect exists
+contrast_sex_dyads_sensitivity = contrast(get_parent_child_dyad(fit_m3_sensitivity), method = list("same_vs_cross" = c(-1, 1, 1, -1))) %>% calc_fdr_p() %>% rename_columns()
+contrast_sex_dyads_sensitivity_all_raters = contrast(get_parent_child_dyad(fit_m3_sensitivity_all_raters), method = list("same_vs_cross" = c(-1, 1, 1, -1))) %>% calc_fdr_p() %>% rename_columns()
+contrast_sex_dyads_sensitivity_ysr_12 = contrast(get_parent_child_dyad(fit_m3_sensitivity_ysr_12), method = list("same_vs_cross" = c(-1, 1, 1, -1))) %>% calc_fdr_p() %>% rename_columns()
 
 # append contrast_sex_dyads in one table
 all_contrast_sex_dyads = rbind(
@@ -233,3 +242,9 @@ openxlsx::write.xlsx(post_sensitivity, "results/post_hoc_investigations/post_sen
 openxlsx::write.xlsx(post_sensitivity_all_raters, "results/post_hoc_investigations/post_sensitivity_all_raters.xlsx") # save as xlsx
 openxlsx::write.xlsx(post_sensitivity_ysr_12, "results/post_hoc_investigations/post_sensitivity_ysr_12.xlsx") # save as xlsx
 
+
+
+# calculate main effect of PGS on autism score ordinal averaged across rater type, sex, other covariates 
+# (as close to the main effect we can get in a model with categorical variables)
+# for model 4
+emtrends(fit_m4, ~ 1, var = "PGS_scaled", mode = "latent") %>% rename_columns()

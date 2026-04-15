@@ -22,44 +22,46 @@ data_long = data_long %>%
                 ~ as.numeric(scale(.)), .names = "{col}_scaled")) 
 
 
-# helper function to get contrasts with unadjusted p-values. This function was made with help of AI but seems to work well
-contrast_with_unadj <- function(emm_obj, ..., adjust = "fdr") {
-  ctr <- contrast(emm_obj, ..., adjust = "none")
+# calculate fdr adjusted p value
+calc_fdr_p <- function(emm_obj, method = "fdr") {
+  out = as.data.frame(emm_obj) %>%
+    rename(any_of(c(
+        "p_unadjusted"   = "p.value",
+        "p_unadjusted"   = "p-value",
+        "p_unadjusted"   = "p_value"
+    )))
 
-  unadj <- summary(ctr, adjust = "none")
-  adj   <- summary(ctr, adjust = adjust)
-
-  out <- as.data.frame(adj)
-  out$p_unadjusted <- unadj$p.value
-
-  names(out)[names(out) == "p.value"] <- paste0("p_", adjust)
-
-  if(emm_obj@misc$estName == "prob") {
-    out <- out %>%
-      mutate(
-        `Prob. Difference` = estimate,
-        SE = SE,
-        `Prob 95% CI Lower` = estimate - 1.96 * SE,
-        `Prob 95% CI Upper` = estimate + 1.96 * SE
-      ) %>%
-      select(-estimate) # remove the original 'estimate' column as it's now represented as 'Probability'
-  }
-
-    # ---- Add odds ratios (only meaningful on latent/logit scale) ----
-  if("estimate" %in% names(out)) {
-    out$`Odds Ratio` <- exp(out$estimate)
-    out$`OR 95% CI Lower` <- exp(out$estimate - 1.96 * out$SE)
-    out$`OR 95% CI Upper` <- exp(out$estimate + 1.96 * out$SE)
-  }
-
-  if("asymp.LCL" %in% names(out)) {
-    names(out)[names(out) == "asymp.LCL"] <- "95% CI Lower"
-  }
-  if("asymp.UCL" %in% names(out)) {
-    names(out)[names(out) == "asymp.UCL"] <- "95% CI Upper"
-  }
+  out$p_fdr <- p.adjust(out$p_unadjusted, method = method)
 
   out
+}
+
+rename_columns <- function(emm_obj) {
+  out <- as.data.frame(emm_obj)
+  
+  target_col <- intersect(c("estimate", "emmean", "age_scaled.trend", "date_of_assessment_scaled.trend"), names(out))[1]
+  
+  if (!is.na(target_col)) {
+    out <- out %>%
+      mutate(
+        `Odds Ratio`      = exp(.data[[target_col]]),
+        `OR 95% CI Lower` = exp(.data[[target_col]] - 1.96 * SE),
+        `OR 95% CI Upper` = exp(.data[[target_col]] + 1.96 * SE)
+      )
+  }
+  
+  out <- out %>%
+    rename(any_of(c(
+      "p-value"                            = "p.value",
+      "Estimated Probability"              = "prob",
+      "Estimate difference (log-odds)"     = "estimate",
+      "Estimated Marginal Mean (log-odds)" = "emmean",
+      "Slope of Age (scaled) in log-odds"  = "age_scaled.trend",
+      "Slope of Date of Assessment (scaled) in log-odds" = "date_of_assessment_scaled.trend"
+    ))) %>%
+    select(-contains("asymp.LCL"), -contains("asymp.UCL"))
+  
+  return(out)
 }
 
 # --- Three way interaction effect post hoc investigation ---
@@ -82,39 +84,38 @@ get_slopes_two_way <- function(fit_model, var_for_slopes) {
   )
 }
 
-calculate_main_effects = function(fit_model) {
-  emmeans(fit_model, ~ 1, mode = "latent")
+calculate_main_effects = function(fit_model, var_for_slopes) {
+  emtrends(fit_model, ~ 1, var = var_for_slopes, mode = "latent")
 }
 
 # collect results and save as excel files
 lst_results = function(three_way_model, outcome_var, var_for_slopes) {
   list(
   # pgs association with latent autism score ordinal within each rater type and sex
-  `predictors_omnibus_test` = joint_tests(three_way_model), # we use omnibus testing to test the overall significant of the two- and three-way interactions by using emmeans joint_tests()
+  # we use omnibus testing to test the overall significant of the two- and three-way interactions by using emmeans joint_tests()
+  `predictors_omnibus_test` = joint_tests(three_way_model) %>% calc_fdr_p() %>% rename_columns(), 
 
-  `main_effects` = summary(calculate_main_effects(three_way_model)),
+  `main_effects` = summary(calculate_main_effects(three_way_model, var_for_slopes), infer = c(TRUE, TRUE)) %>% rename_columns(),
 
-  `2_way_emtrends` = summary(get_slopes_two_way(three_way_model, var_for_slopes), infer = c(TRUE, TRUE)),
+  `2_way_emtrends` = summary(get_slopes_two_way(three_way_model, var_for_slopes), infer = c(TRUE, TRUE)) %>% calc_fdr_p() %>% rename_columns(),
 
-  `3_way_emtrends` = summary(get_slopes_three_way(three_way_model, var_for_slopes), infer = c(TRUE, TRUE)),
+  `3_way_emtrends` = summary(get_slopes_three_way(three_way_model, var_for_slopes), infer = c(TRUE, TRUE)) %>% calc_fdr_p() %>% rename_columns(),
 
   # pairwise contrast between sexes of  with probability of autism score ordinal within each rater type
   `3_way_contrast_sex` =
-    contrast_with_unadj(
+    contrast(
       get_slopes_three_way(three_way_model, var_for_slopes),
       method = "pairwise",
       by = "rater_type",
-      adjust = "fdr"
-    ),
+    ) %>% calc_fdr_p() %>% rename_columns(),
 
   # pairwise contrast between rater types of  with probability of autism score ordinal within each rater type
   `3_way_contrast_rater` =
-    contrast_with_unadj(
+    contrast(
       get_slopes_three_way(three_way_model, var_for_slopes),
       method = "pairwise",
       by = "sex",
-      adjust = "fdr"
-    )
+    ) %>% calc_fdr_p() %>% rename_columns()
 )}
 
 # a function to remove all degrees of freedom (df) columns as these are nonsensical for clmm models (all show up as NA and inf)
@@ -125,6 +126,7 @@ drop_df_columns <- function(list_of_tables) {
   })
 }
 
+# we use omnibus testing to test the overall significant of the two- and three-way interactions by using emmeans joint_tests()
 post_age = lst_results(fit_age, "autism_score_ordinal", "age_scaled")
 post_date = lst_results(fit_date, "autism_score_ordinal", "date_of_assessment_scaled")
 
@@ -166,34 +168,5 @@ ggsave(
 
 
 
-
-# trying stuff here
-  emtrends(
-    fit_age,
-    ~ rater_type * sex,
-    var = "age_scaled",
-    mode = "latent"
-  )
-
-# This gives the main effect of a variable (in this case age_scaled)
-summary(emtrends(
-  fit_age,
-  ~ 1, 
-  var = "age_scaled",
-  mode = "latent"
-), infer = c(TRUE, TRUE)
-)
-# This gives the main effect of a variable (in this case age_scaled)
-summary(emtrends(
-  fit_age,
-  ~ 1, 
-  mode = "latent"
-), infer = c(TRUE, TRUE)
-)
-
-summary(emtrends(fit_age, ~ 1, mode = "latent", var = "age_scaled"), infer = c(TRUE, TRUE))
-summary(emmeans(fit_age, ~ 1, mode = "latent", var = "rater_type"), infer = c(TRUE, TRUE))
-
-# we use omnibus testing to test the overall significant of the two- and three-way interactions by using emmeans joint_tests()
-joint_tests(fit_age)
-
+a = emmeans(fit_age, ~ rater_type * sex, var = "age_scaled", mode = "latent")
+b = contrast(a, method = "pairwise", by = "sex")

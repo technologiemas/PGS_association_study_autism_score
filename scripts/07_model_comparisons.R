@@ -60,8 +60,7 @@ car::vif(fit_m4)
 Anova(fit_m3) 
 Anova(fit_m4)
 
-
-correlations_predictors = cov2cor(vcov(fit_m3))
+correlations_predictors = cov2cor(vcov(fit_m3)) # no very high correlations
 
 library(openxlsx)
 openxlsx::write.xlsx(correlations_predictors, "results/correlations_predictors_m3.xlsx")
