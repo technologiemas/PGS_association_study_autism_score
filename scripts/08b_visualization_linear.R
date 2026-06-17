@@ -18,16 +18,16 @@ fit_m4_linear <- readRDS("results/models/fit_m4_linear.rds")
 colors = c("Male" = "#00C07B", "Female" = "#FFBB09")
 dir.create("results/figures/linear", showWarnings = FALSE, recursive = TRUE)
 
-# --- Two-way interaction: rater_type * sex ---
+# --- Two-way interaction: rater * sex ---
 # 1. Get Marginal Means (Predicted Scores)
-emm_rater_sex <- emmeans(fit_m3_linear, ~ sex | rater_type)
+emm_rater_sex <- emmeans(fit_m3_linear, ~ sex | rater)
 rater_sex_df <- as.data.frame(emm_rater_sex)
 
 # 2. Plot Predicted Means
-ggplot(rater_sex_df, aes(x = rater_type, y = emmean, color = sex, group = sex)) +
+ggplot(rater_sex_df, aes(x = rater, y = emmean, color = sex, group = sex)) +
   geom_point(size = 3, position = position_dodge(width = 0.5)) +
   geom_errorbar(aes(ymin = asymp.LCL, ymax = asymp.UCL), width = 0.2, position = position_dodge(width = 0.5)) +
-  # facet_grid(~ rater_type) +
+  # facet_grid(~ rater) +
   scale_color_manual(values = colors) +
   theme(legend.position = "top") +
   labs(y = "Predicted Autism Score (scaled; 95% CI)", 
@@ -38,9 +38,9 @@ ggplot(rater_sex_df, aes(x = rater_type, y = emmean, color = sex, group = sex)) 
 ggsave("results/figures/linear/rater_sex_linear.tiff", device = "tiff", width = 8.4, height = 6, units = "cm", dpi = 600, scale = 2)
 
 
-# --- Three-way interaction: PGS * rater_type * sex ---
+# --- Three-way interaction: PGS * rater * sex ---
 # 1. Get trends over the continuous PGS variable
-rg <- emmeans(fit_m4_linear, ~ sex | PGS_scaled * rater_type, 
+rg <- emmeans(fit_m4_linear, ~ sex | PGS_scaled * rater, 
               at = list(PGS_scaled = seq(-3, 3, by = 0.1)))
 rater_sex_pgs <- as.data.frame(rg)
 
@@ -48,7 +48,7 @@ rater_sex_pgs <- as.data.frame(rg)
 ggplot(rater_sex_pgs, aes(x = PGS_scaled, y = emmean, color = sex, fill = sex)) +
   geom_ribbon(aes(ymin = asymp.LCL, ymax = asymp.UCL), alpha = 0.1, color = NA) +
   geom_line(linewidth = 1) +
-  facet_wrap(~ rater_type, ncol = 2) + 
+  facet_wrap(~ rater, ncol = 2) + 
   scale_color_manual(values = colors) +
   scale_fill_manual(values = colors) +
   labs(title = "Effect of PGS on Autism Score by Rater and Sex",
@@ -88,20 +88,20 @@ plot_data_clean <- plot_data %>%
     term == "PGS_scaled" ~ "PGS (Main Effect)",
     term == "sexMale" ~ "Sex (Male)",
     term == "sexFEMALE" ~ "Sex (Female)",
-    term == "rater_typev12" ~ "Rater: Father",
-    term == "rater_typet12" ~ "Rater: Teacher",
-    term == "rater_typeysr14" ~ "Rater: Self",
+    term == "raterv12" ~ "Rater: Father",
+    term == "ratert12" ~ "Rater: Teacher",
+    term == "raterysr14" ~ "Rater: Self",
     term == "PGS_scaled:sexFEMALE" ~ "PGS × Female",
-    term == "PGS_scaled:rater_typet12" ~ "PGS × Teacher",
-    term == "PGS_scaled:rater_typev12" ~ "PGS × Father",
-    term == "PGS_scaled:rater_typeysr14" ~ "PGS × Self",
-    term == "rater_typev12:sexFEMALE" ~ "Female × Father",
-    term == "rater_typet12:sexFEMALE" ~ "Female × Teacher",
-    term == "rater_typeysr14:sexFEMALE" ~ "Female × Self",
+    term == "PGS_scaled:ratert12" ~ "PGS × Teacher",
+    term == "PGS_scaled:raterv12" ~ "PGS × Father",
+    term == "PGS_scaled:raterysr14" ~ "PGS × Self",
+    term == "raterv12:sexFEMALE" ~ "Female × Father",
+    term == "ratert12:sexFEMALE" ~ "Female × Teacher",
+    term == "raterysr14:sexFEMALE" ~ "Female × Self",
     term == "age_scaled" ~ "Age (Scaled)",
-    term == 'PGS_scaled:rater_typet12:sexFEMALE' ~ "PGS × Teacher × Female",
-    term == 'PGS_scaled:rater_typev12:sexFEMALE' ~ "PGS × Father × Female",
-    term == 'PGS_scaled:rater_typeysr14:sexFEMALE' ~ "PGS × Self × Female",
+    term == 'PGS_scaled:ratert12:sexFEMALE' ~ "PGS × Teacher × Female",
+    term == 'PGS_scaled:raterv12:sexFEMALE' ~ "PGS × Father × Female",
+    term == 'PGS_scaled:raterysr14:sexFEMALE' ~ "PGS × Self × Female",
     TRUE ~ term 
   )) %>%
   # reorder terms so that main effects are first and interactions after

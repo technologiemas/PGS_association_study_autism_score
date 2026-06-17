@@ -43,8 +43,8 @@ performance(fit_m5)
 
 # exploration of sample sizes
 mf <- model.frame(fit_m4)
-table(mf$sex, mf$rater_type)
-table(mf$sex, mf$rater_type, mf$autism_score_ordinal)
+table(mf$sex, mf$rater)
+table(mf$sex, mf$rater, mf$autism_score_ordinal)
 
 # collinearity checks
 check_collinearity(fit_m2) # without interaction terms as VIF will be unreliable because of these

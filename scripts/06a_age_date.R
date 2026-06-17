@@ -28,13 +28,13 @@ data_long = data_long %>%
 # split datasets for sensitivity analysis including ysr at age 12
 data_long_ysr12 = data_long 
 data_long = data_long %>%
-  filter(rater_type %in% c("Mother", "Father", "Teacher", "Self")) # filter out the ysr at age 12 rater type for the main analyses
+  filter(rater %in% c("Mother", "Father", "Teacher", "Self")) # filter out the ysr at age 12 rater type for the main analyses
 
 
 # --- MODEL FORMULA DEFINITIONS ---
 
-age_formula = "autism_score_ordinal ~ (1 | FamilyNumber / FISNumber) + age_scaled * sex * rater_type + date_of_assessment_scaled"
-date_formula = "autism_score_ordinal ~ (1 | FamilyNumber / FISNumber) + date_of_assessment_scaled * sex * rater_type + age_scaled"
+age_formula = "autism_score_ordinal ~ (1 | FamilyNumber / FISNumber) + age_scaled * sex * rater + date_of_assessment_scaled"
+date_formula = "autism_score_ordinal ~ (1 | FamilyNumber / FISNumber) + date_of_assessment_scaled * sex * rater + age_scaled"
 
 
 # function for running the models

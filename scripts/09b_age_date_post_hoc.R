@@ -66,11 +66,11 @@ rename_columns <- function(emm_obj) {
 
 # --- Three way interaction effect post hoc investigation ---
 
-# three way PGS * sex * rater_type: slopes of PGS predicting autism score ordinal within each rater type and sex
+# three way PGS * sex * rater: slopes of PGS predicting autism score ordinal within each rater type and sex
 get_slopes_three_way <- function(fit_model, var_for_slopes) {
   emtrends(
     fit_model,
-    ~ rater_type * sex,
+    ~ rater * sex,
     var = var_for_slopes,
     mode = "latent"
   )
@@ -79,7 +79,7 @@ get_slopes_three_way <- function(fit_model, var_for_slopes) {
 get_slopes_two_way <- function(fit_model, var_for_slopes) {
   emtrends(
     fit_model,
-    ~ rater_type,
+    ~ rater,
     var = var_for_slopes
   )
 }
@@ -106,7 +106,7 @@ lst_results = function(three_way_model, outcome_var, var_for_slopes) {
     contrast(
       get_slopes_three_way(three_way_model, var_for_slopes),
       method = "pairwise",
-      by = "rater_type",
+      by = "rater",
     ) %>% calc_fdr_p() %>% rename_columns(),
 
   # pairwise contrast between rater types of  with probability of autism score ordinal within each rater type
@@ -143,7 +143,7 @@ openxlsx::write.xlsx(post_date, "results/post_hoc_investigations/post_date.xlsx"
 ggplot(data_long, aes(x = age, y = autism_score, color = sex, alpha=0.3)) +
   geom_point() +
   geom_smooth(method = "lm") +
-  facet_wrap(~ rater_type) +
+  facet_wrap(~ rater) +
   labs(x = "Age", y = "Autism Score", title = "Linear relationship between age, sex and rater type predicting autism score") +
   theme(legend.position = "top") 
 
@@ -156,7 +156,7 @@ ggsave(
 ggplot(data_long, aes(x = date_of_assessment, y = autism_score, color = sex, alpha=0.3)) +
   geom_point() +
   geom_smooth(method = "lm") +
-  facet_wrap(~ rater_type) +
+  facet_wrap(~ rater) +
   labs(x = "Date of Assessment", y = "Autism Score", title = "Linear relationship between date of assessment, sex and rater type predicting autism score") +
   theme(legend.position = "top")
 
@@ -165,8 +165,3 @@ ggsave(
     width = 15, height = 10, units = "cm",
     dpi = 600, scale = 2
 )
-
-
-
-a = emmeans(fit_age, ~ rater_type * sex, var = "age_scaled", mode = "latent")
-b = contrast(a, method = "pairwise", by = "sex")

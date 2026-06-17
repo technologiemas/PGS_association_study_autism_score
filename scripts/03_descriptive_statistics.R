@@ -16,16 +16,16 @@ data_long = readRDS("data/processed/02_full_dataset_long.rds")
 #TODO
 data_long_ysr12 = data_long # create a copy of data_long to keep the ysr at age 12 rater type for the sensitivity analyses including ysr at age 12
 data_long = data_long %>%
-  filter(rater_type %in% c("Mother", "Father", "Teacher", "Self")) # filter out the ysr at age 12 rater type for the main analyses
+  filter(rater %in% c("Mother", "Father", "Teacher", "Self")) # filter out the ysr at age 12 rater type for the main analyses
 
 
 # --- distribution of age and date of assessment in the sample ---
 
 data_mother = data_long %>%
-filter(rater_type == "Mother")
+filter(rater == "Mother")
 
 data_self = data_long %>%
-filter(rater_type == "Self")
+filter(rater == "Self")
 
 hist(data_mother$age)
 hist(data_self$age, breaks = 30)
@@ -38,10 +38,10 @@ hist(data_self$date_of_assessment)
 
 # --- distribution of phenotype and PGS data ---
 
-shapiro.test(sample(data_long$autism_score[data_long$`rater_type` == "Mother"], 2000)) # result: not normally distributed
-shapiro.test(sample(data_long$autism_score[data_long$`rater_type` == "Father"], 2000)) # result: not normally distributed
-shapiro.test(sample(data_long$autism_score[data_long$`rater_type` == "Teacher"], 2000)) # result: not normally distributed
-shapiro.test(sample(data_long$autism_score[data_long$`rater_type` == "Self"], 2000)) # result: not normally distributed
+shapiro.test(sample(data_long$autism_score[data_long$`rater` == "Mother"], 2000)) # result: not normally distributed
+shapiro.test(sample(data_long$autism_score[data_long$`rater` == "Father"], 2000)) # result: not normally distributed
+shapiro.test(sample(data_long$autism_score[data_long$`rater` == "Teacher"], 2000)) # result: not normally distributed
+shapiro.test(sample(data_long$autism_score[data_long$`rater` == "Self"], 2000)) # result: not normally distributed
 
 shapiro.test(sample(data$P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1, 2000)) # result: normally distributed
 
@@ -58,22 +58,22 @@ calculate_descriptives_phenotype <- function(data_long, phenotype) {
   # Returns:
   #   A data frame with descriptive statistics and p-values
   
-  # one t-test per rater_type and correct for multiple testing
+  # one t-test per rater and correct for multiple testing
   pvals <- data_long %>%
-    group_by(`rater_type`) %>%
+    group_by(`rater`) %>%
     summarise(p_value = wilcox.test({{phenotype}} ~ `sex`)$p.value, # this test was determined as data was non normally distributed according to the Shapiro-Wilk test (above)
               .groups = "drop")
 
   # calculate effect sizes
   effect_sizes <- data_long %>%
-    group_by(`rater_type`) %>%
+    group_by(`rater`) %>%
     reframe(
       cohen_d = cohen.d({{phenotype}} ~ `sex`, data = cur_data())$cohen.d[2],
     )
 
   # calculate descriptives for each rater type and sex
   descriptives <- data_long %>%
-    group_by(`rater_type`, `sex`) %>%
+    group_by(`rater`, `sex`) %>%
     summarise(
       n         = sum(!is.na({{phenotype}})),
       `age (mean)`       = mean(age, na.rm = TRUE),
@@ -87,8 +87,8 @@ calculate_descriptives_phenotype <- function(data_long, phenotype) {
       .groups   = "drop"
     ) 
     # %>%
-  #   left_join(pvals, by = "rater_type") %>%
-  #   left_join(effect_sizes, by = "rater_type")
+  #   left_join(pvals, by = "rater") %>%
+  #   left_join(effect_sizes, by = "rater")
 
   # descriptives$p_value = descriptives$p_value * 4 # Bonferroni correction for 4 tests
 
@@ -111,7 +111,7 @@ calculate_descriptives_genotype <- function(data, PGS) {
     dplyr::slice(1) %>%
     ungroup() 
 
-  # one t-test per rater_type
+  # one t-test per rater
   pvals <- data_unique %>%
     summarise(t_test_p = t.test({{PGS}} ~ `sex`)$p.value, # t-test was chosen as data is normally distributed according to Shapiro-Wilk test (above)
               .groups = "drop")
@@ -181,7 +181,7 @@ descriptives_genotype_scaled <- calculate_descriptives_genotype(data, `P_0_1_SCO
 descriptives_phenotype = descriptives_phenotype %>%
   bind_rows(
     data.frame(
-      rater_type = "overlap all raters",
+      rater = "overlap all raters",
       sex = c("Male", "Female"),
       n = c(nrow(data_overlap[data_overlap$sex == "Male", ]), nrow(data_overlap[data_overlap$sex == "Female", ]))))
 

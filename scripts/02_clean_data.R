@@ -133,7 +133,7 @@ data_ysr     <- data_ysr %>% select(-EUR_1KG_Outlier, -all_of(items_ysr14))
 data <- data %>% select(-in_YS_12M, -in_YS_12V, -in_YS_TRF12, -in_YS_DHBQ14, -in_YS_12S, -EUR_1KG_Outlier, -all_of(items_m12), -all_of(items_v12), -all_of(items_t12), -all_of(items_ysr14), -all_of(items_ysr12)) # clean out the data a bit
 
 
-# --- creating long dataset with duplicate FISNumbers, one column for autism_score and one for rater_type ---
+# --- creating long dataset with duplicate FISNumbers, one column for autism_score and one for rater ---
 # Pivot columns long
 age_long <- data %>%
   pivot_longer(
@@ -145,7 +145,7 @@ age_long <- data %>%
 score_long <- data %>%
   pivot_longer(
     cols = ends_with("_aut_sum"),
-    names_to = "rater_type",
+    names_to = "rater",
     values_to = "autism_score",
     names_pattern = "(.*)_aut_sum"
   ) 
@@ -153,7 +153,7 @@ score_long <- data %>%
 score_long_sensitivity <- data %>%
   pivot_longer(
     cols = ends_with("_aut_sum_sensitivity"),
-    names_to = "rater_type",
+    names_to = "rater",
     values_to = "autism_score_sensitivity",
     names_pattern = "(.*)_aut_sum_sensitivity"
   )
@@ -166,31 +166,31 @@ date_long = data %>%
   )
   
 
-# Match age_key to rater_type. Define a lookup table for mapping age_key -> rater_type
+# Match age_key to rater. Define a lookup table for mapping age_key -> rater
 age_map <- tibble(
   age_key = c("agem12", "agev12", "agetrf12", "ages14", "ages12"),
-  rater_type = c("m12", "v12", "t12", "ysr14", "ysr12")
+  rater = c("m12", "v12", "t12", "ysr14", "ysr12")
 )
 
-# Match age_key to rater_type. Define a lookup table for mapping age_key -> rater_type
+# Match age_key to rater. Define a lookup table for mapping age_key -> rater
 date_assessment_map <- tibble(
   date_key = c("invjrm12", "invjrv12", "invjrt12", "invjrs14", "invjrs12"),
-  rater_type = c("m12", "v12", "t12", "ysr14", "ysr12")
+  rater = c("m12", "v12", "t12", "ysr14", "ysr12")
 )
 
 
-# Join to attach rater_type to age values, deselect columns
+# Join to attach rater to age values, deselect columns
 age_mapped <- left_join(age_long, age_map, by = "age_key")
 date_mapped <- left_join(date_long, date_assessment_map, by = "date_key")
 
-data_long <- left_join(age_mapped, score_long) # add by = c("FISNumbers", "rater_type")?
+data_long <- left_join(age_mapped, score_long) # add by = c("FISNumbers", "rater")?
 data_long <- left_join(data_long, score_long_sensitivity)
 data_long <- left_join(data_long, date_mapped) # test this
 
 # deselect unnessesary columns that have been merged above
 data_long <- data_long %>% select(-invjrm12, -invjrv12, -invjrt12, -invjrs14, -invjrs12, -invjrm12, -date_key, -age_key, -agem12, -agev12, -agetrf12, -ages14, -ages12, -m12_aut_sum, -v12_aut_sum, -t12_aut_sum, -ysr14_aut_sum, -m12_aut_sum_sensitivity, -v12_aut_sum_sensitivity, -t12_aut_sum_sensitivity, -ysr14_aut_sum_sensitivity) 
 
-data_long$rater_type <- factor(data_long$rater_type, levels = c("m12", "v12", "t12", "ysr14", "ysr12"), labels = c("Mother", "Father", "Teacher", "Self", "Self_age_12")) # convert rater_type to factor
+data_long$rater <- factor(data_long$rater, levels = c("m12", "v12", "t12", "ysr14", "ysr12"), labels = c("Mother", "Father", "Teacher", "Self", "Self_age_12")) # convert rater to factor
 
 
 # --- Some more filtering and creating the ordinal autism score variable ---
@@ -202,7 +202,7 @@ data_long = data_long %>%
          !is.na(autism_score),
          !is.na(date_of_assessment),
          !is.na(PLATFORM),
-         !is.na(rater_type),
+         !is.na(rater),
          !is.na(sex),
          !is.na(PC1_1KG), !is.na(PC2_1KG), !is.na(PC3_1KG), !is.na(PC4_1KG), !is.na(PC5_1KG), !is.na(PC6_1KG), !is.na(PC7_1KG), !is.na(PC8_1KG), !is.na(PC9_1KG), !is.na(PC10_1KG),
          !is.na(P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1),

@@ -95,3 +95,5 @@ power_results = data.frame(
   n = c(tot_female, tot_male, m_female, m_male, v_female, v_male, t_female, t_male, s_female, s_male),
   power = c(pow_tot_female, pow_tot_male, pow_m_female, pow_m_male, pow_v_female, pow_v_male, pow_t_female, pow_t_male, pow_s_female, pow_s_male)
 )     
+
+

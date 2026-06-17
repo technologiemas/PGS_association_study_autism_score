@@ -13,7 +13,6 @@ xlsx_files_paths = c(
     "results/descriptives.xlsx",
     "results/measurement_invariance_results.xlsx",
     "results/model_output.xlsx",
-    "results/post_hoc_investigations/contrast_sex_dyads.xlsx",
     "results/post_hoc_investigations/post.xlsx",
     "results/post_hoc_investigations/post_sensitivity.xlsx",
     "results/post_hoc_investigations/post_sensitivity_all_raters.xlsx"

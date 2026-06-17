@@ -43,27 +43,45 @@ data_long_all_raters_present = data_long %>%
 # split datasets for sensitivity analysis including ysr at age 12
 data_long_ysr12 = data_long 
 data_long = data_long %>%
-  filter(rater_type %in% c("Mother", "Father", "Teacher", "Self")) # filter out the ysr at age 12 rater type for the main analyses
+  filter(rater %in% c("Mother", "Father", "Teacher", "Self")) # filter out the ysr at age 12 rater type for the main analyses
+data_long$rater = factor(data_long$rater, levels = c("Mother", "Father", "Teacher", "Self")) # ensure rater is a factor with the correct levels
 
 
 # --- MODEL FORMULA DEFINITIONS ---
 
-# We define the right hand side of the formulas and later on paste them with the outcomes on the left hand size.
-rhs_m0 = "(1 | FamilyNumber / FISNumber)" # random effect of families with nested individuals
+random_effects = "(1 | FamilyNumber / FISNumber) +"
 
-rhs_m1 = paste(rhs_m0, "+ PGS_scaled + sex + rater_type")
+covariates = "(PLATFORM + age_scaled + date_of_assessment_scaled +
+          PC1_scaled + PC2_scaled + PC3_scaled + PC4_scaled + PC5_scaled +
+          PC6_scaled + PC7_scaled + PC8_scaled + PC9_scaled + PC10_scaled)"
 
-rhs_m2 = paste(rhs_m1, "+ PLATFORM + age_scaled + date_of_assessment_scaled +",
-               paste0("PC", 1:10, "_scaled", collapse = " + "))
+# Model 1, covariates only, base model
+m1_formula = paste(random_effects, covariates)
 
-rhs_m3 = paste(rhs_m2, "+ PGS_scaled * rater_type + PGS_scaled * sex + sex * rater_type")
+# Model 2, add main effects
+m2_formula = paste(m1_formula, "+ PGS_scaled + sex + rater")
 
-rhs_m4 = paste(rhs_m3, "+ PGS_scaled * rater_type * sex")
+# Model 3, add two-way interactions
+m3_formula = paste(m2_formula,
+               "+ PGS_scaled * rater + PGS_scaled * sex + sex * rater")
 
-rhs_m5 = paste(rhs_m4, "+ (PLATFORM + age_scaled + date_of_assessment_scaled +",
-               paste0("PC", 1:10, "_scaled", collapse = " + "), 
-               ") * (PGS_scaled + sex + rater_type)")
-              
+# Model 4, add three-way interaction
+m4_formula = paste(m3_formula,
+               "+ PGS_scaled * sex * rater")
+
+# Model 5, includes Keller adjustment for three-way interactions
+m5_formula = paste(
+  m4_formula,
+  "+",
+  covariates,
+  "* (PGS_scaled * sex + PGS_scaled * rater + sex * rater)"
+)
+
+# checking if the formulas expand correctly
+form <- as.formula(paste("autism_score_ordinal ~", m5_formula))
+terms(form)
+X = model.matrix(form, data = data_long)
+colnames(X) # includes individual terms of the categorical variables (i.e. for rater: mother, father, teacher, self)
 
 # --- Functions for running the models ---
 
@@ -77,15 +95,15 @@ run_ordinal_clmm = function (formula_str, data) {
 }
 
 
-# --- RUNNING THE MODELS
+# --- RUNNING THE HIERARCHICAL MODELS ---
 
 # Construct Formulas
 outcome_main = "autism_score_ordinal"
-m1_main = paste(outcome_main, "~", rhs_m1)
-m2_main = paste(outcome_main, "~", rhs_m2)
-m3_main = paste(outcome_main, "~", rhs_m3)
-m4_main = paste(outcome_main, "~", rhs_m4)
-m5_main = paste(outcome_main, "~", rhs_m5)
+m1_main = paste(outcome_main, "~", m1_formula)
+m2_main = paste(outcome_main, "~", m2_formula)
+m3_main = paste(outcome_main, "~", m3_formula)
+m4_main = paste(outcome_main, "~", m4_formula)
+m5_main = paste(outcome_main, "~", m5_formula)
 
 # Fit CLMM Models
 message("Running Main CLMM Models...")
@@ -109,11 +127,11 @@ saveRDS(fit_m5, "results/models/fit_m5_clmm.rds")
 
 # Construct Formulas
 outcome_sens = "autism_score_ordinal_sensitivity"
-m1_sens = paste(outcome_sens, "~", rhs_m1)
-m2_sens = paste(outcome_sens, "~", rhs_m2)
-m3_sens = paste(outcome_sens, "~", rhs_m3)
-m4_sens = paste(outcome_sens, "~", rhs_m4)
-m5_sens = paste(outcome_sens, "~", rhs_m5)
+m1_sens = paste(outcome_sens, "~", m1_formula)
+m2_sens = paste(outcome_sens, "~", m2_formula)
+m3_sens = paste(outcome_sens, "~", m3_formula)
+m4_sens = paste(outcome_sens, "~", m4_formula)
+m5_sens = paste(outcome_sens, "~", m5_formula)
 
 # 2A. Sensitivity - Full Dataset
 message("Running Sensitivity CLMM Models (Full Data)...")

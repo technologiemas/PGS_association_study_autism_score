@@ -33,8 +33,8 @@ relable_wrapper = function(df) {
   if ("autism_score_ordinal_sensitivity" %in% names(df)) {
     df$autism_score_ordinal_sensitivity = relabel_autism_score(df$autism_score_ordinal_sensitivity)
   }
-  if ("rater_type" %in% names(df)) {
-    df$rater_type = relabel_rater(df$rater_type)
+  if ("rater" %in% names(df)) {
+    df$rater = relabel_rater(df$rater)
   }
   if ("sex" %in% names(df)) {
     df$sex = relabel_sex(df$sex)

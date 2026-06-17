@@ -20,11 +20,12 @@ colors = c("Male" = "#00C07B", "Female" = "#FFBB09")
 
 data_long_ysr12 = data_long # create a copy of data_long to keep the ysr at age 12 rater type for the sensitivity analyses including ysr at age 12
 data_long = data_long %>%
-  filter(rater_type %in% c("Mother", "Father", "Teacher", "Self")) # filter out the ysr at age 12 rater type for the main analyses
+  filter(rater %in% c("Mother", "Father", "Teacher", "Self")) # filter out the ysr at age 12 rater type for the main analyses
 
+# --- PLOTTING FIGURES ---
        
 # ridgeline plot (histogram style)
-ggplot(data_long, aes(x = autism_score, y = rater_type, fill = sex)) +
+ggplot(data_long, aes(x = autism_score, y = rater, fill = sex)) +
   geom_density_ridges(
     stat = "binline", 
     binwidth = 1,        # Use a fixed width (e.g., 1 unit per bin)
@@ -91,7 +92,7 @@ ggplot(
   aes(x = sex, fill = autism_score_ordinal)
 ) +
   geom_bar(position = "fill") +
-  facet_wrap(~ rater_type) +
+  facet_wrap(~ rater) +
   scale_y_continuous(labels = scales::percent_format()) +
   labs(
     title = "Ordinal Autism Score by Rater Type and Sex",
@@ -104,12 +105,12 @@ ggplot(
 ggsave("results/figures/autism_score_ordinal_barplot.png", width = 8, height = 6, dpi=600)
 
 # --- boxplots of genotype data ---
-
 ggplot(data_long, aes(x = sex, y = P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1)) +
   geom_boxplot() +
-  theme(text = element_text(size = 20)) +   # larger font size
-  labs(title = "Genotype by Sex",
-       subtitle = "Comparison of Female and Male Ratings")
+  theme(text = element_text(size = 20)) +
+  labs(title = "Mean autism PGS per sex") +
+  stat_compare_means(method = "t.test", size = 6,  label.x.npc = 0.32) +
+  ylab("autism PGS")
 
 ggsave("results/figures/pgs_sex_boxplot.png", width = 6, height = 6, dpi=600)
 
@@ -117,7 +118,7 @@ ggsave("results/figures/pgs_sex_boxplot.png", width = 6, height = 6, dpi=600)
 
 data_long$sub_cat = paste(data_long$FISNumber, data_long$sex)
 
-ggplot(data_long, aes(x=rater_type, y = autism_score, group=sub_cat, color=sex)) +
+ggplot(data_long, aes(x=rater, y = autism_score, group=sub_cat, color=sex)) +
   geom_point(alpha = 0.5) +
   geom_line(alpha = 0.2) +
   theme(text = element_text(size = 20)) +   # larger font size
@@ -128,7 +129,7 @@ ggplot(data_long, aes(x=rater_type, y = autism_score, group=sub_cat, color=sex))
 
 
 # box plot separated on sex with mean line instead of median
-ggplot(data_long, aes(x = rater_type, y = autism_score, fill = sex)) +
+ggplot(data_long, aes(x = rater, y = autism_score, fill = sex)) +
   geom_boxplot(position = position_dodge(0.8), fatten = NULL, width = 0.7) +
   stat_summary(fun.y = mean, geom = "errorbar", aes(ymax = ..y.., ymin = ..y.., group = sex),
                position = position_dodge(0.8),
@@ -156,14 +157,14 @@ ggplot(data_long, aes(x = autism_score, fill = sex)) +
     position = "identity",
     color = "white"
   ) +
-  facet_grid(rater_type ~ ., scales = "free_y", space = "free_y") +  # less whitespace
+  facet_grid(rater ~ ., scales = "free_y", space = "free_y") +  # less whitespace
   geom_vline(xintercept = c(0.5, 3.5), linetype = "dashed", color = "red", size = 0.6) +
     geom_text(
     data = data.frame(
       x = c(0, 2, 4.5), 
       y = -1, # place at the bottom
       label = c("No", "Low", "High"), 
-      rater_type = factor("Self") # only at the bottom one
+      rater = factor("Self") # only at the bottom one
     ),
     aes(x = x, y = y, label = label),
     inherit.aes = FALSE,

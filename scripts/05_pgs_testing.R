@@ -9,7 +9,7 @@ library(haven)
 
 
 # --- LOAD DATA ---
-data_mother = readRDS("data/processed/02_data_mother_clean.rds")
+data = readRDS("data/processed/02_data_mother_clean.rds")
 genotype_data = read_sav("./data/raw/NTR-DSR-5023_AutismSpectrumDisorder_PMID30804558_MRG18_PedMergedWithScores.sav")
 
 all_pgs = genotype_data %>%
@@ -34,7 +34,7 @@ all_pgs = all_pgs %>%
   mutate(across(everything(), ~ as.numeric(scale(.)), .names = "{col}_scaled"))
 
 # rename PCs
-data_mother = data_mother %>%
+data = data %>%
   rename(PC1 = PC1_1KG,
          PC2 = PC2_1KG,
          PC3 = PC3_1KG,
@@ -47,36 +47,22 @@ data_mother = data_mother %>%
          PC10 = PC10_1KG)
 
 # join all_pgs and mother on FISNumber
-data_mother = data_mother %>%
+data = data %>%
   left_join(all_pgs, by = "FISNumber")
 
 # --- SCALING/STANDARDIZING THE DATA---
 
 # all continuous variables will be scaled to mean = 0 and sd = 1 (e.g. age, pgs, pcs)
 # autism score will be ordinalized with three levels: 0, 1-3, 4+ (no, mild, high)
-# all categorical variables will be converted to factors (e.g., PLATFORM, rater_type, sex)
+# all categorical variables will be converted to factors (e.g., PLATFORM, rater, sex)
 
-data_mother = data_mother %>%
+data = data %>%
   mutate(across(c("agem12", "PC1", "PC2", "PC3", "PC4", "PC5", "PC6", "PC7", "PC8", "PC9", "PC10", "m12_aut_sum"),
                 ~ as.numeric(scale(.)), .names = "{col}_scaled"))
 
-data_mother = data_mother %>%
+data = data %>%
   mutate(PLATFORM = haven::zap_labels(PLATFORM, sex)) %>%
   mutate(across(c(PLATFORM, sex, FISNumber, FamilyNumber), as.factor))
-
-# ordinalize autism score into three levels: 0, 1-3, 4+
-data_mother = data_mother %>%
-  mutate(autism_score_ordinal = cut(m12_aut_sum,
-                                 breaks = c(-Inf, 1, 4, Inf),
-                                 labels = c("no", "mild", "high"),
-                                 right = FALSE)) 
-
-# Convert autism ordinal to an ordered factor
-data_mother$autism_score_ordinal <- factor(
-  data_mother$autism_score_ordinal,
-  ordered = TRUE,
-  levels  = sort(unique(data_mother$autism_score_ordinal))  # no, mild, high
-)
 
 # --- MODELING ---
 library(ordinal)
@@ -99,7 +85,7 @@ pgs_columns = c("P_0_01_SCORE_AutismSpectrumDisorder_MRG18_LDp1_scaled",
 
 # run models and store results
 model_results = lapply(pgs_columns, function(col) {
-  result = run_ordinal_logistic_regression(data_mother, col)
+  result = run_ordinal_logistic_regression(data, col)
   return(list(pgs = col, result = result))
 })
 
@@ -116,6 +102,10 @@ for (res in model_results) {
     p_value = coef_info["Pr(>|z|)"]
   ))
 }
+
+model_results
+pgs_coefficients
+correlations_pgs
 
 # save results
 dir.create("results/pgs_threshold_comparisons", showWarnings = FALSE)
