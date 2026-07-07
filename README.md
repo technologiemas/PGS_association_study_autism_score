@@ -19,8 +19,6 @@ To recreate the analyses, generate plots and create excel file data dumps, run n
 
 ## Project Organization
 
-The project is structured according to the [Cookiecutter Data Science](https://drivendata.github.io/cookiecutter-data-science/) template. This template provides a logical, reasonably standardized, but flexible project structure for doing and sharing data science work.
-
 ```
 FILE STRUCTURE
 ├── LICENSE            <- Open-source license (MIT)
