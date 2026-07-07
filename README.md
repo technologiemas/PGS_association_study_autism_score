@@ -21,6 +21,7 @@ To recreate the analyses, generate plots and create excel file data dumps, run n
 
 The project is structured according to the [Cookiecutter Data Science](https://drivendata.github.io/cookiecutter-data-science/) template. This template provides a logical, reasonably standardized, but flexible project structure for doing and sharing data science work.
 
+```
 FILE STRUCTURE
 ├── LICENSE            <- Open-source license (MIT)
 ├── README.md          <- you are reading me now!
@@ -35,3 +36,4 @@ FILE STRUCTURE
 ├── scripts            <- All R scripts necessary to run the project. Run in order. Some loose files include collection of xlsx 
 │   │                    files,  power calculations and simulation modelling to determine to use ordinal regression.
 │   └── Measurement invariance            <- contains the mplus input files necessary to run the measurement invariance testing.
+```
