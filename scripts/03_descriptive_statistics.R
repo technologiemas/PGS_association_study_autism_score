@@ -13,7 +13,6 @@ library(openxlsx)
 data = readRDS("data/processed/02_full_dataset_clean.rds")
 data_long = readRDS("data/processed/02_full_dataset_long.rds")
 
-#TODO
 data_long_ysr12 = data_long # create a copy of data_long to keep the ysr at age 12 rater type for the sensitivity analyses including ysr at age 12
 data_long = data_long %>%
   filter(rater %in% c("Mother", "Father", "Teacher", "Self")) # filter out the ysr at age 12 rater type for the main analyses
@@ -43,7 +42,7 @@ shapiro.test(sample(data_long$autism_score[data_long$`rater` == "Father"], 2000)
 shapiro.test(sample(data_long$autism_score[data_long$`rater` == "Teacher"], 2000)) # result: not normally distributed
 shapiro.test(sample(data_long$autism_score[data_long$`rater` == "Self"], 2000)) # result: not normally distributed
 
-shapiro.test(sample(data$P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1, 2000)) # result: normally distributed
+shapiro.test(sample(data_long$PGS, 2000)) # result: normally distributed
 
 
 # --- descriptives and pairwise statistical tests ---

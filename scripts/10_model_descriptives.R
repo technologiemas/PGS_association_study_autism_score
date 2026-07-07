@@ -7,6 +7,7 @@ library(psych)
 library(broom.mixed)
 library(emmeans)
 library(openxlsx)
+library(ordinal)
 
 # --- HIERARCHICAL MODELS ---
 
@@ -91,26 +92,3 @@ lst_results <- list(
 
 openxlsx::write.xlsx(lst_results, "results/model_output.xlsx") 
 
-
-# ---DROP-ONE MAIN AND TWO-WAY INTERACTIONS INDIVIDUAL EFFECT MODELS ---
-library(ordinal)
-
-# We need to run one for each hierarchical model as drop1 can only drop the interaction effect when one is present. So to drop the main effects we need the only main effects model (2). 
-# Warning takes very long to run.
-drop1_effects_m1 = drop1(fit_m1, test = "Chisq")
-drop1_effects_m2 = drop1(fit_m2, test = "Chisq")
-drop1_effects_m3 = drop1(fit_m3, test = "Chisq")
-drop1_effects_m4 = drop1(fit_m4, test = "Chisq") 
-drop1_effects_m5 = drop1(fit_m5, test = "Chisq")
-
-saveRDS(drop1_effects_m1, "results/models/drop1_effects_m1.rds")
-saveRDS(drop1_effects_m2, "results/models/drop1_effects_m2.rds")
-saveRDS(drop1_effects_m3, "results/models/drop1_effects_m3.rds")
-saveRDS(drop1_effects_m4, "results/models/drop1_effects_m4.rds")
-saveRDS(drop1_effects_m5, "results/models/drop1_effects_m5.rds")
-
-readRDS("results/models/drop1_effects_m1.rds")
-readRDS("results/models/drop1_effects_m2.rds")
-readRDS("results/models/drop1_effects_m3.rds")
-readRDS("results/models/drop1_effects_m4.rds")
-readRDS("results/models/drop1_effects_m5.rds")

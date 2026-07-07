@@ -61,6 +61,10 @@ saveRDS(fit_age, "results/models/sensitivity/age_three_way.rds")
 saveRDS(fit_date, "results/models/sensitivity/date_three_way.rds")
 
 
+library(ordinal)
+fit_age = readRDS("results/models/sensitivity/age_three_way.rds")
+fit_date = readRDS("results/models/sensitivity/date_three_way.rds")
+
 summary(fit_age)
 summary(fit_date)
 

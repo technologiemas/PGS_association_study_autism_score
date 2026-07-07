@@ -134,10 +134,5 @@ print(round(c(thr1_1 /sqrt(vAGE*b2est_1**2 + vB0 + vE),thr1_2 /sqrt(vAGE*b2est_1
 # vE = 1, is this always the case?
 
 # in conclusion the r2 of age is:
-# R2_est_1 = (vAGE*b2est_1**2) / (vAGE*b2est_1**2 + vB0 + vE)
-
-
-
-
-cov2cor(vcov(out1))
-vcov(out1)
+R2_est_1 = (vAGE*b2est_1**2) / (vAGE*b2est_1**2 + vB0 + vE)
+R2_est_1

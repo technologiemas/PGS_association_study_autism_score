@@ -7,6 +7,7 @@ gc()
 library(ordinal)
 library(car)
 library(performance)
+library(emmeans)
 
 fit_m1 <- readRDS("results/models/fit_m1_clmm.rds")
 fit_m2 <- readRDS("results/models/fit_m2_clmm.rds")
@@ -55,12 +56,82 @@ check_collinearity(fit_m4)
 car::vif(fit_m2) # results with this package look fine too
 car::vif(fit_m3)
 car::vif(fit_m4)
+car::vif(fit_m5) # <- TODO: check this one!
 
-# chisq of each predictor in best fitting models
-Anova(fit_m3) 
-Anova(fit_m4)
+# chisq and wald test of each predictor in best fitting models following emmeans joint_tests
+joint_tests(fit_m3,
+            nuisance = c("PC1_scaled",  "PC2_scaled",  "PC3_scaled",
+                         "PC4_scaled",  "PC5_scaled",  "PC6_scaled",
+                         "PC7_scaled",  "PC8_scaled",  "PC9_scaled",
+                         "PC10_scaled",
+                         "PLATFORM"))
+
+joint_tests(fit_m4,
+            nuisance = c("PC1_scaled",  "PC2_scaled",  "PC3_scaled",
+                         "PC4_scaled",  "PC5_scaled",  "PC6_scaled",
+                         "PC7_scaled",  "PC8_scaled",  "PC9_scaled",
+                         "PC10_scaled",
+                         "PLATFORM"))
+
+joint_tests(fit_m5,
+            nuisance = c("PC1_scaled",  "PC2_scaled",  "PC3_scaled",
+                         "PC4_scaled",  "PC5_scaled",  "PC6_scaled",
+                         "PC7_scaled",  "PC8_scaled",  "PC9_scaled",
+                         "PC10_scaled",
+                         "PLATFORM"
+                         ), rg.limit = 196608)
 
 correlations_predictors = cov2cor(vcov(fit_m3)) # no very high correlations
 
 library(openxlsx)
 openxlsx::write.xlsx(correlations_predictors, "results/correlations_predictors_m3.xlsx")
+
+
+
+
+# ---DROP-ONE MAIN AND TWO-WAY INTERACTIONS INDIVIDUAL EFFECT MODELS ---
+# TODO: delete
+# library(ordinal)
+
+# # We need to run one for each hierarchical model as drop1 can only drop the interaction effect when one is present. So to drop the main effects we need the only main effects model (2). 
+# # Warning takes very long to run.
+# drop1_effects_m1 = drop1(fit_m1, test = "Chisq")
+# drop1_effects_m2 = drop1(fit_m2, test = "Chisq")
+# drop1_effects_m3 = drop1(fit_m3, test = "Chisq")
+# drop1_effects_m4 = drop1(fit_m4, test = "Chisq") 
+# drop1_effects_m5 = drop1(fit_m5, test = "Chisq")
+
+# saveRDS(drop1_effects_m1, "results/models/drop1_effects_m1.rds")
+# saveRDS(drop1_effects_m2, "results/models/drop1_effects_m2.rds")
+# saveRDS(drop1_effects_m3, "results/models/drop1_effects_m3.rds")
+# saveRDS(drop1_effects_m4, "results/models/drop1_effects_m4.rds")
+# saveRDS(drop1_effects_m5, "results/models/drop1_effects_m5.rds")
+# 
+readRDS("results/models/drop1_effects_m1.rds")
+readRDS("results/models/drop1_effects_m2.rds")
+readRDS("results/models/drop1_effects_m3.rds")
+readRDS("results/models/drop1_effects_m4.rds")
+readRDS("results/models/drop1_effects_m5.rds")
+
+
+
+# TODO: delete?? Or do I want the r2 for PGS after all
+fit_pgs <- clmm(as.formula(paste("autism_score_ordinal ~ ", m1_formula, "+ PGS_scaled")),
+              data = data_long,
+              link = "logit",
+              threshold = "flexible")
+
+# calculating nagelkerke's r2 for the PGS model vs the base model (only covariates)
+ll_full = logLik(fit_pgs)
+ll_null = logLik(fit_m1)
+n = nobs(fit_pgs)
+r2_2 = (1 - exp((2/n) * (as.numeric(ll_null) - as.numeric(ll_full)))) / (1 - exp((2/n) * as.numeric(ll_null)))
+r2_2
+
+logLik(fit_m1)
+logLik(fit_pgs)
+
+AIC(fit_m1)
+AIC(fit_pgs)
+
+anova(fit_m1, fit_pgs)

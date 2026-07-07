@@ -132,10 +132,3 @@ data <- data %>%
   create_autism_score(items_ysr12_sensitivity, "in_YS_12S", "ysr12_aut_sum_sensitivity") # this is only for the sensitivity analysis of ysr at age 12
 
 saveRDS(data, "data/processed/01_full_dataset.rds")
-
-
-# View(zap_labels(data) %>% filter(!is.na(ysr12_aut_sum)))
-# View(zap_labels(data) %>% filter(in_YS_12S == 1))
-# nrow(zap_labels(data) %>% filter(in_YS_12S == 1))
-# nrow(zap_labels(phenotype_data) %>% filter(!is.na(in_YE_ATTEF2)))
-# nrow(zap_labels(data) %>% filter(!is.na(in_YE_ATTEF2)))

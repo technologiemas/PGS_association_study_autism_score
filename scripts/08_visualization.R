@@ -300,7 +300,6 @@ fit_m4_sensitivity_all_raters <- readRDS("results/models/sensitivity/fit_m4_clmm
 fit_m3_ysr_12 = readRDS("results/models/sensitivity/fit_ysr_12_m3_clmm_sensitivity.rds") # with the ysr at age 12 included
 fit_m4_ysr_12 = readRDS("results/models/sensitivity/fit_ysr_12_m4_clmm_sensitivity.rds") 
 
-
 # --- create plots ---
 
 # main models
@@ -313,7 +312,13 @@ p_m4_three_way <- plot_three_way(df_m4, "Model 4", outcome_var = "autism_score_o
 p_m4_three_way_high_only <- plot_three_way_high_only(df_m4, "Model 4", outcome_var = "autism_score_ordinal")
 p_m4_forest <- plot_forest_odds_ratios(fit_m4, "Model 4")
 
-# p_barplot_pred_prob = plot_barplot_predicted_probabilities(fit_m3, outcome_var = "autism_score_ordinal") # another plot type to visualise predicted probabilities
+# fit_m5 <- readRDS("results/models/fit_m5_clmm.rds")
+# res_m5 <- get_rater_sex_emmeans(fit_m5, outcome_var = "autism_score_ordinal")
+# p_m5_prob <- plot_pred_prob_rater_sex(res_m5$probs, "Model 5", outcome_var = "autism_score_ordinal")
+
+# fit_age_interaction = readRDS("results/models/fit_age_interaction_clmm.rds")
+# res_rater_sex <- get_rater_sex_emmeans(fit_age_interaction, outcome_var = "autism_score_ordinal")
+# p_rater_sex_prob = plot_pred_prob_rater_sex(res_rater_sex$probs, "Model Rater-Sex", outcome_var = "autism_score_ordinal")
 
 # sensitivity analyses
 res_m3_sensitivity <- get_rater_sex_emmeans(fit_m3_sensitivity, outcome_var = "autism_score_ordinal_sensitivity")
@@ -367,3 +372,5 @@ save_plots <- function(plot, filename) {
 
 save_plots(p_m3_prob, "results/figures/test_plot.png")
 
+# save_plots(p_rater_sex_prob, "results/figures/age_interaction.png")
+# save_plots(p_m5_prob, "results/figures/m5_pred_prob.png")

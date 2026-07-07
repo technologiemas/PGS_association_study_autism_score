@@ -165,3 +165,107 @@ ggsave(
     width = 15, height = 10, units = "cm",
     dpi = 600, scale = 2
 )
+
+
+
+
+
+
+
+library(ordinal)
+library(emmeans)
+
+data_self = data_long %>%
+  filter(rater == "Self")
+
+# data_long = data_long %>%
+#   filter(rater %in% c("Self", "Mother", "Father", "Teacher"))
+
+data_self_12 = data_long_ysr12 %>%
+  filter(rater == "Self_age_12")
+
+formula_fit_self_covariates = "autism_score_ordinal ~ (1 | FamilyNumber) + age_scaled * sex"
+fit_self_covariates = run_ordinal_clmm(as.formula(formula_fit_self_covariates), data_self)
+summary(fit_self_covariates)
+saveRDS(fit_self_covariates, "results/models/fit_self_covariates_clmm.rds")
+# fit_self_covariates = readRDS("results/models/fit_self_covariates_clmm.rds")
+
+formula_fit_self_12 = "autism_score_ordinal ~ (1 | FamilyNumber) + age_scaled * sex + date_of_assessment_scaled * sex"
+fit_self_12 = run_ordinal_clmm(as.formula(formula_fit_self_12), data_self_12)
+summary(fit_self_12)
+saveRDS(fit_self_12, "results/models/fit_self_12_clmm.rds")
+
+formula_age_interaction = "autism_score_ordinal ~ (1 | FamilyNumber/FISNumber) + age_scaled * sex * rater"
+fit_age_interaction = run_ordinal_clmm(as.formula(formula_age_interaction), data_long)
+summary(fit_age_interaction)
+saveRDS(fit_age_interaction, "results/models/fit_age_interaction_clmm.rds")
+fit_age_interaction = readRDS("results/models/fit_age_interaction_clmm.rds")
+
+fit_m5 = readRDS("results/models/fit_m5_clmm.rds")
+summary(fit_m5)
+
+fit_m3 = readRDS("results/models/fit_m3_clmm.rds")
+summary(fit_m3)
+
+contrast(emmeans(fit_m3, ~ rater_type * sex, mode = "latent", cov.reduce = mean),
+        method = "pairwise",
+        by = "rater_type",
+        adjust = "none"
+      ) # significant difference...
+
+contrast(emmeans(fit_m5, ~ rater * sex, mode = "latent", cov.reduce = mean),
+        method = "pairwise",
+        by = "rater",
+        adjust = "none"
+      ) # no significant difference...
+
+contrast(emmeans(fit_self_covariates, ~ sex, mode = "latent", cov.reduce = mean),
+        method = "pairwise",
+        adjust = "none"
+      ) # significant sex difference...
+
+contrast(emmeans(fit_age_interaction, ~ rater * sex, mode = "latent", cov.reduce = mean),
+        by = "rater",
+        method = "pairwise",
+        adjust = "none"
+      ) # no significant sex difference...
+
+contrast(
+  emtrends(
+    fit_rater_sex_covariates,
+    ~ rater * sex,
+    var = "date_of_assessment_scaled",
+    mode = "latent",
+    cov.reduce = mean
+  ),
+  method = "pairwise",
+  by = "rater",
+  adjust = "none"
+)
+
+contrast(
+  emtrends(
+    fit_rater_sex_covariates,
+    ~ rater * sex,
+    var = "age_scaled"
+  ),
+  method = "pairwise",
+  by = "rater",
+  adjust = "none"
+)
+
+contrast(emmeans(fit_m5, ~ rater * sex, mode = "latent", cov.reduce = mean),
+        method = "pairwise",
+        by = "sex",
+        adjust = "none"
+      )
+
+contrast(emmeans(fit_m3, ~ rater_type * sex, mode = "latent", cov.reduce = mean),
+        method = "pairwise",
+        by = "sex",
+        adjust = "none"
+      )
+
+emmip(fit_m5,
+sex ~ age_scaled | rater,
+mode = "latent")

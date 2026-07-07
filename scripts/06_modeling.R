@@ -16,26 +16,6 @@ source("scripts/_helper_functions.R")
 # --- LOAD DATA ---
 data_long = readRDS("data/processed/02_full_dataset_long.rds")
 
-
-# --- PRE-PROCESSING & FORMATTING ---
-
-# Rename PGS and PCs
-data_long = data_long %>%
-  rename(PGS = P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1) %>%
-  rename_with(~ gsub("_1KG", "", .), starts_with("PC")) # Quick rename for PCs
-
-# Scaling Continuous Variables
-# We scale PCs, PGS, and both versions of the continuous autism score (for linear models)
-vars_to_scale <- c("PGS", paste0("PC", 1:10), "autism_score", "autism_score_sensitivity", "age", "date_of_assessment")
-
-data_long = data_long %>%
-  mutate(across(all_of(vars_to_scale),
-                ~ as.numeric(scale(.)), .names = "{col}_scaled")) 
-
-# Check data types
-sapply(data_long, class)
-class(data_long$autism_score_ordinal) 
-
 # Create all raters present Sensitivity Subset
 data_long_all_raters_present = data_long %>%
   filter(all_rater_present)
@@ -107,7 +87,6 @@ m5_main = paste(outcome_main, "~", m5_formula)
 
 # Fit CLMM Models
 message("Running Main CLMM Models...")
-# fit_m0 <- run_ordinal_clmm(paste(outcome_main, "~ 1 +", rhs_m0), data_long) # null model with only random effects, fails to converge
 fit_m1 <- run_ordinal_clmm(m1_main, data_long)
 fit_m2 <- run_ordinal_clmm(m2_main, data_long)
 fit_m3 <- run_ordinal_clmm(m3_main, data_long)
@@ -121,6 +100,10 @@ saveRDS(fit_m2, "results/models/fit_m2_clmm.rds")
 saveRDS(fit_m3, "results/models/fit_m3_clmm.rds")
 saveRDS(fit_m4, "results/models/fit_m4_clmm.rds")
 saveRDS(fit_m5, "results/models/fit_m5_clmm.rds")
+
+saveRDS(fit_m3, "results/models/fit_m3_clmm_reduced_pcs.rds")
+saveRDS(fit_m4, "results/models/fit_m4_clmm_reduced_pcs.rds")
+saveRDS(fit_m5, "results/models/fit_m5_clmm_reduced_pcs.rds")
 
 
 # --- SENSITIVITY ANALYSIS ---
@@ -180,3 +163,5 @@ saveRDS(fit_ysr_12_m4, "results/models/sensitivity/fit_ysr_12_m4_clmm_sensitivit
 saveRDS(fit_ysr_12_m5, "results/models/sensitivity/fit_ysr_12_m5_clmm_sensitivity.rds")
 
 message("All models fitted and saved successfully.")
+
+

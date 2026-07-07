@@ -119,19 +119,10 @@ create_rater_dataset <- function(data, filter_col, pheno_cols_general, geno_cols
     select(-all_of(filter_col))
 }
 
-data_mother  <- create_rater_dataset(data, "in_YS_12M", pheno_cols_general, geno_cols_general, pheno_cols_mother, "m12_aut_sum")
-data_father  <- create_rater_dataset(data, "in_YS_12V", pheno_cols_general, geno_cols_general, pheno_cols_father, "v12_aut_sum")
-data_teacher <- create_rater_dataset(data, "in_YS_TRF12", pheno_cols_general, geno_cols_general, pheno_cols_teacher, "t12_aut_sum")
-data_ysr     <- create_rater_dataset(data, "in_YS_DHBQ14", pheno_cols_general, geno_cols_general, pheno_cols_ysr, "ysr14_aut_sum")
 data_all_items = data # save full dataset with all cols available (including individual items etc)
 
 # deselect columns related to items, outliers and indicators (in_YS_12M, in_YS_12V, in_YS_TRF12, in_YS_DHBQ14)
-data_mother  <- data_mother %>% select(-EUR_1KG_Outlier, -all_of(items_m12))
-data_father  <- data_father %>% select(-EUR_1KG_Outlier, -all_of(items_v12))
-data_teacher <- data_teacher %>% select(-EUR_1KG_Outlier, -all_of(items_t12))
-data_ysr     <- data_ysr %>% select(-EUR_1KG_Outlier, -all_of(items_ysr14))
 data <- data %>% select(-in_YS_12M, -in_YS_12V, -in_YS_TRF12, -in_YS_DHBQ14, -in_YS_12S, -EUR_1KG_Outlier, -all_of(items_m12), -all_of(items_v12), -all_of(items_t12), -all_of(items_ysr14), -all_of(items_ysr12)) # clean out the data a bit
-
 
 # --- creating long dataset with duplicate FISNumbers, one column for autism_score and one for rater ---
 # Pivot columns long
@@ -227,15 +218,27 @@ data_long = data_long %>%
                                  right = FALSE, 
                                  ordered_result = TRUE)) 
 
-# check data types for data in long format
+# --- PRE-PROCESSING & FORMATTING ---
+
+# Rename PGS and PCs
+data_long = data_long %>%
+  rename(PGS = P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1) %>%
+  rename_with(~ gsub("_1KG", "", .), starts_with("PC")) # Quick rename for PCs
+
+# Scaling Continuous Variables
+# We scale PCs, PGS, and both versions of the continuous autism score (for linear models)
+vars_to_scale <- c("PGS", paste0("PC", 1:10), "autism_score", "autism_score_sensitivity", "age", "date_of_assessment")
+
+data_long = data_long %>%
+  mutate(across(all_of(vars_to_scale),
+                ~ as.numeric(scale(.)), .names = "{col}_scaled")) 
+
+# Check data types
 sapply(data_long, class)
+class(data_long$autism_score_ordinal) 
 
 
 # --- Save the datasets ---
-saveRDS(data_mother, "data/processed/02_data_mother_clean.rds")
-saveRDS(data_father, "data/processed/02_data_father_clean.rds")
-saveRDS(data_teacher, "data/processed/02_data_teacher_clean.rds")
-saveRDS(data_ysr, "data/processed/02_data_ysr_clean.rds")
 saveRDS(data, "data/processed/02_full_dataset_clean.rds")
 saveRDS(data_long, "data/processed/02_full_dataset_long.rds")
 saveRDS(data_all_items, "data/processed/02_data_all_items.rds")
