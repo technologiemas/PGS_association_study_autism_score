@@ -3,7 +3,7 @@
 This study investigates sex differences in the association between an autism polygenic score and an autism subscale of the ASEBA questionnaires. These questionnaires were taken in a general population. Rater effects are investigated as the same questionnaire was taken via self-, parent- and teacher-reports (YSR, TRF and CBCL respectively).
 
 
-```
+
 # Recreate analysis
 
 The data was requested from NTR following the data_request_1.json file. The data was downloaded from the NTR website and is stored in the `data/raw` folder. The data is not included in this repository due to its size and privacy concerns. The data can be requested from NTR by following the instructions on their website: https://ntr-data-request.psy.vu.nl/.
