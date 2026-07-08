@@ -39,7 +39,7 @@ data = phenotype_data %>%
 
 # select the columns of interest from the genotype data
 genotype_data = genotype_data %>% select(all_of(geno_cols_general))
-genotype_data = unique(genotype_data) # for some reason all rows were duplicate in the genotype data I received
+genotype_data = unique(genotype_data) # rows were duplicated because of amendment file
 
 # join the two data sets where data is present for both tables for each FISNumber 
 data = data %>% inner_join(genotype_data, by = "FISNumber")
@@ -131,4 +131,12 @@ data <- data %>%
   create_autism_score(items_ysr14_sensitivity, "in_YS_DHBQ14", "ysr14_aut_sum_sensitivity") %>%
   create_autism_score(items_ysr12_sensitivity, "in_YS_12S", "ysr12_aut_sum_sensitivity") # this is only for the sensitivity analysis of ysr at age 12
 
+data_self_12 = data %>%
+  filter(!is.na(ysr12_aut_sum)) # create a dataset with only the individuals that have ysr at age 12 for the sensitivity analysis
+
+data = data %>%
+  filter(is.na(ysr12_aut_sum)) # only keep individuals that have at least one of the raters present
+
+
 saveRDS(data, "data/processed/01_full_dataset.rds")
+saveRDS(data_self_12, "data/processed/01_full_dataset_self_12.rds")

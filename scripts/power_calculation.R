@@ -1,99 +1,64 @@
 # This script does power calculations for the main effect of PGS on autism score ordinal
 # It calculates the effective sample size accounting for clustering within families and participants
+# adapted from script at our department
 
 rm(list = ls(all = TRUE))
 gc()
 
-library(pwr)
-
-# sample sizes
-tot_female = 8831
-tot_male = 6624
-m_female = 3002
-m_male = 2244
-v_female = 2315
-v_male = 1683
-t_female = 1910
-t_male = 1551
-s_female = 1963
-s_male = 1205
-
-# effect size
-effect_size = 0.02 # average beta from systematic review
-
-# calculating ICC
-data = readRDS("data/processed/02_full_dataset_clean.rds")
-data_long = readRDS("data/processed/02_full_dataset_long.rds")
-# calculate average FamilyNumber size
-m_family = mean(table(data$FamilyNumber))
-m_participant = mean(table(data$FISNumber))
-
-# calculate ICC for autism_score by FamilyNumber
 library(lme4)
 library(lmerTest)
-model_icc = lmer(autism_score ~ 1 + (1 | FamilyNumber) + (1 | FISNumber), data = data_long)
+library(dplyr)
+library(purrr)
+library(tidyr)
+library(pwr)
 
-v <- as.data.frame(VarCorr(model_icc))$vcov
-icc_family <- v[1] / sum(v)
-icc_participant <- v[2] / sum(v)
+data_long <- readRDS("data/processed/02_full_dataset_long.rds")
 
-icc_overall = (v[1] + v[2]) / sum(v)
+subgroups <- data_long %>% 
+  distinct(rater, sex) %>% 
+  drop_na(rater, sex) # Ensures we don't loop over missing categories
 
+per_subgroup_results <- map_df(1:nrow(subgroups), function(i) {
+  current_rater <- subgroups$rater[i]
+  current_sex   <- subgroups$sex[i]
+  
+  sub_data <- data_long %>% 
+    filter(rater == current_rater, sex == current_sex)
+  
+    # Run the 2-level family model
+    mod <- lmer(autism_score ~ 1 + (1 | FamilyNumber), data = sub_data)
+    m_data <- model.frame(mod)
+    
+    # Extract family variance components
+    vc <- as.data.frame(VarCorr(mod))
+    tot_v <- sum(vc$vcov)
+    icc_f <- vc$vcov[grepl("FamilyNumber", vc$grp)] / tot_v
+    
+    # Calculate Stratified Effective N (Department Method)
+    eff_res <- m_data %>%
+      group_by(FamilyNumber) %>% 
+      mutate(n_family = n()) %>%
+      ungroup() %>%
+      mutate(
+        DE_row = 1 + (n_family - 1) * icc_f,
+        weight = 1 / DE_row
+      ) %>%
+      summarise(
+        Rater       = current_rater,
+        Sex         = current_sex,
+        Total_Raw_N = n(),
+        Effective_N = as.integer(sum(weight)),
+        Subgroup_ICC = icc_f
+      )
+    
+    return(eff_res)
+})
 
-# effect_sample_size
-# eff_n = function(n, m_family, m_participant, icc_family, icc_participant) {
-#   n / ((1 + (m_family - 1) * icc_family) * (1 + (m_participant - 1) * icc_participant))
-# }
+# power calculation for the main effect of PGS using an effect size from our previous systematic review 
+effect_size = 0.01
+per_subgroup_results = per_subgroup_results %>%
+  mutate(
+    power_pgs = pwr.f2.test(u = 1, v = Effective_N, f2 = effect_size, sig.level= 0.05)$power
+  )
 
-# eff_n = function (n, m_family, m_participant, icc_overall) {
-#   n / (1 + (m_family * m_participant - 1) * icc_overall)
-#   n / DE
-# }
-
-eff_n = function(n, m_family, m_participant, icc_family, icc_participant) {
-  DE =  1 + (m_family - 1) * icc_family + (m_participant - 1) * icc_participant
-  n / DE
-}
-
-tot_female = eff_n(tot_female, m_family, m_participant, icc_family, icc_participant)
-tot_male = eff_n(tot_male, m_family, m_participant, icc_family, icc_participant)
-m_female = eff_n(m_female, m_family, m_participant, icc_family, icc_participant)
-m_male = eff_n(m_male, m_family, m_participant, icc_family, icc_participant)
-v_female = eff_n(v_female, m_family, m_participant, icc_family, icc_participant)
-v_male = eff_n(v_male, m_family, m_participant, icc_family, icc_participant)
-t_female = eff_n(t_female, m_family, m_participant, icc_family, icc_participant)
-t_male = eff_n(t_male, m_family, m_participant, icc_family, icc_participant)
-s_female = eff_n(s_female, m_family, m_participant, icc_family, icc_participant)
-s_male = eff_n(s_male, m_family, m_participant, icc_family, icc_participant)
-
-# calculating power
-pow_tot_female = pwr.f2.test(u = 1, v = tot_female, f2 = effect_size, sig.level= 0.05)$power
-pow_tot_male = pwr.f2.test(u = 1, v = tot_male, f2 = effect_size, sig.level= 0.05)$power
-pow_m_female = pwr.f2.test(u = 1, v = m_female, f2 = effect_size, sig.level= 0.05)$power
-pow_m_male = pwr.f2.test(u = 1, v = m_male, f2 = effect_size, sig.level= 0.05)$power
-pow_v_female = pwr.f2.test(u = 1, v = v_female, f2 = effect_size, sig.level= 0.05)$power
-pow_v_male = pwr.f2.test(u = 1, v = v_male, f2 = effect_size, sig.level= 0.05)$power
-pow_t_female = pwr.f2.test(u = 1, v = t_female, f2 = effect_size, sig.level= 0.05)$power
-pow_t_male = pwr.f2.test(u = 1, v = t_male, f2 = effect_size, sig.level= 0.05)$power
-pow_s_female = pwr.f2.test(u = 1, v = s_female, f2 = effect_size, sig.level= 0.05)$power
-pow_s_male = pwr.f2.test(u = 1, v = s_male, f2 = effect_size, sig.level= 0.05)$power
-
-cat("power for total female:", pow_tot_female, "\n")
-cat("power for total male:", pow_tot_male, "\n")
-cat("power for mother rated males:", pow_m_male, "\n")
-cat("power for mother rated females:", pow_m_female, "\n")
-cat("power for father rated males:", pow_v_male, "\n")
-cat("power for father rated females:", pow_v_female, "\n")
-cat("power for teacher rated males:", pow_t_male, "\n")
-cat("power for teacher rated females:", pow_t_female, "\n")
-cat("power for self rated males:", pow_s_male, "\n")
-cat("power for self rated females:", pow_s_female, "\n")
-
-# create dataframe with results
-power_results = data.frame(
-  group = c("total_female", "total_male", "mother_female", "mother_male", "father_female", "father_male", "teacher_female", "teacher_male", "self_female", "self_male"),
-  n = c(tot_female, tot_male, m_female, m_male, v_female, v_male, t_female, t_male, s_female, s_male),
-  power = c(pow_tot_female, pow_tot_male, pow_m_female, pow_m_male, pow_v_female, pow_v_male, pow_t_female, pow_t_male, pow_s_female, pow_s_male)
-)     
-
-
+per_subgroup_results

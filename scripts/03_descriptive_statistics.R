@@ -13,10 +13,7 @@ library(openxlsx)
 data = readRDS("data/processed/02_full_dataset_clean.rds")
 data_long = readRDS("data/processed/02_full_dataset_long.rds")
 
-data_long_ysr12 = data_long # create a copy of data_long to keep the ysr at age 12 rater type for the sensitivity analyses including ysr at age 12
-data_long = data_long %>%
-  filter(rater %in% c("Mother", "Father", "Teacher", "Self")) # filter out the ysr at age 12 rater type for the main analyses
-
+data_long_ysr12 = readRDS("data/processed/02_full_dataset_long_self_age_12.rds")
 
 # --- distribution of age and date of assessment in the sample ---
 
@@ -48,15 +45,6 @@ shapiro.test(sample(data_long$PGS, 2000)) # result: normally distributed
 # --- descriptives and pairwise statistical tests ---
 
 calculate_descriptives_phenotype <- function(data_long, phenotype) {
-  # Calculate descriptive statistics and perform statistical tests for the phenotype autism scores per rater
-  #
-  # Args:
-  #   data_long: A data frame containing the data in long format
-  #   phenotype: The rater for which to calculate descriptives and perform tests.
-  #
-  # Returns:
-  #   A data frame with descriptive statistics and p-values
-  
   # one t-test per rater and correct for multiple testing
   pvals <- data_long %>%
     group_by(`rater`) %>%
@@ -81,8 +69,6 @@ calculate_descriptives_phenotype <- function(data_long, phenotype) {
       `date of assessment (sd)`  = sd(date_of_assessment, na.rm = TRUE),
       `autism score (mean)`      = mean({{phenotype}}, na.rm = TRUE),
       sd        = sd({{phenotype}},   na.rm = TRUE),
-      skewness  = skewness({{phenotype}},  na.rm = TRUE),
-      kurtosis  = kurtosis({{phenotype}},  na.rm = TRUE),
       .groups   = "drop"
     ) 
     # %>%
@@ -95,48 +81,24 @@ calculate_descriptives_phenotype <- function(data_long, phenotype) {
 }
 
 calculate_descriptives_genotype <- function(data, PGS) {
-  # Calculate descriptive statistics and perform statistical tests for the polygenic scores
-  #
-  # Args:
-  #   data: A data frame containing the data where each row is a FISNumber (participant)
-  #   PGS: The polygenic score variable
-  #
-  # Returns:
-  #   A data frame with descriptive statistics and p-values
-
   # filter on unique FISNumber to avoid duplicates in the data (as the data is in long format with multiple rows per participant)
   data_unique = data %>%
     group_by(`FISNumber`) %>%
     dplyr::slice(1) %>%
     ungroup() 
 
-  # one t-test per rater
-  pvals <- data_unique %>%
-    summarise(t_test_p = t.test({{PGS}} ~ `sex`)$p.value, # t-test was chosen as data is normally distributed according to Shapiro-Wilk test (above)
-              .groups = "drop")
-
-  # calculate effect sizes
-  effect_sizes <- data_unique %>%
-    reframe(
-      cohen_d = cohen.d({{PGS}} ~ `sex`, data = cur_data())$cohen.d[2],
-    )
-
-  pgs_str = sub(".*_LDp1", "", deparse(substitute(PGS)))
-
   # calculate descriptives for each rater type and sex
   descriptives <- data_unique %>%
     group_by(`sex`) %>%
     summarise(
-      name = paste0("PGS", pgs_str),
+      name = paste0(pgs_str),
       n         = sum(!is.na({{PGS}})),
       `PGS (mean)`      = mean({{PGS}}, na.rm = TRUE),
       sd        = sd({{PGS}},   na.rm = TRUE),
       skewness  = skewness({{PGS}},  na.rm = TRUE),
       kurtosis  = kurtosis({{PGS}},  na.rm = TRUE),
       .groups   = "drop"
-    ) %>%
-    mutate(p_value = pvals$t_test_p,
-           cohen_d = effect_sizes$cohen_d)
+    ) 
   
   return(descriptives)
 }
@@ -160,21 +122,15 @@ data_overlap_no_father = data %>%
 # --- show / save results ---
 
 descriptives_phenotype <- calculate_descriptives_phenotype(data_long, `autism_score`)
-descriptives_genotype <- calculate_descriptives_genotype(data, `P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1`)
-data$P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1_scaled <- scale(data$P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1)
-descriptives_genotype_scaled <- calculate_descriptives_genotype(data, `P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1_scaled`)
+descriptives_genotype <- calculate_descriptives_genotype(data, `PGS`)
+data$P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1_scaled <- scale(data$PGS)
+descriptives_genotype_scaled <- calculate_descriptives_genotype(data, `PGS`)
 
 # descriptives_phenotype
 # descriptives_genotype
 
 # cor_matrix_females
 # cor_matrix_males
-
-# nrow(data_overlap[data_overlap$sex == "Male", ]) # overlap sample males: 414
-# nrow(data_overlap[data_overlap$sex == "Female", ]) # overlap sample females: 624
-
-# nrow(data_overlap_no_father[data_overlap_no_father$sex == "Male", ]) # overlap sample: 490
-# nrow(data_overlap_no_father[data_overlap_no_father$sex == "Female", ]) # overlap sample: 753
 
 # append descriptives with data_overlap sample size
 descriptives_phenotype = descriptives_phenotype %>%

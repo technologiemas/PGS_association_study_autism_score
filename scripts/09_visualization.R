@@ -8,8 +8,6 @@ library(ordinal)
 library(ggplot2)
 library(emmeans)
 library(dplyr)
-source("scripts/_helper_functions.R")
-
 
 
 colors <- c("Male" = "#00C07B", "Female" = "#FFBB09") # set colors for the plots
@@ -290,6 +288,7 @@ plot_barplot_predicted_probabilities <- function(model_fit = fit_m3, outcome_var
 
 fit_m3 <- readRDS("results/models/fit_m3_clmm.rds")
 fit_m4 <- readRDS("results/models/fit_m4_clmm.rds")
+fit_m5 <- readRDS("results/models/fit_m4_clmm.rds")
 
 fit_m3_sensitivity <- readRDS("results/models/sensitivity/fit_m3_clmm_sensitivity.rds")
 fit_m4_sensitivity <- readRDS("results/models/sensitivity/fit_m4_clmm_sensitivity.rds")
@@ -305,6 +304,7 @@ fit_m4_ysr_12 = readRDS("results/models/sensitivity/fit_ysr_12_m4_clmm_sensitivi
 # main models
 res_m3 <- get_rater_sex_emmeans(fit_m3, outcome_var = "autism_score_ordinal")
 df_m4 <- get_three_way_emmeans(fit_m4, outcome_var = "autism_score_ordinal")
+res_m5 <- get_rater_sex_emmeans(fit_m5, outcome_var = "autism_score_ordinal")
 
 p_m3_prob <- plot_pred_prob_rater_sex(res_m3$probs, "Model 3", outcome_var = "autism_score_ordinal")
 p_m3_contr <- plot_pairwise_contrasts_rater_sex(res_m3$contrasts, "Model 3", outcome_var = "autism_score_ordinal")
@@ -312,13 +312,9 @@ p_m4_three_way <- plot_three_way(df_m4, "Model 4", outcome_var = "autism_score_o
 p_m4_three_way_high_only <- plot_three_way_high_only(df_m4, "Model 4", outcome_var = "autism_score_ordinal")
 p_m4_forest <- plot_forest_odds_ratios(fit_m4, "Model 4")
 
-# fit_m5 <- readRDS("results/models/fit_m5_clmm.rds")
-# res_m5 <- get_rater_sex_emmeans(fit_m5, outcome_var = "autism_score_ordinal")
-# p_m5_prob <- plot_pred_prob_rater_sex(res_m5$probs, "Model 5", outcome_var = "autism_score_ordinal")
+# to check if the significant sex*rater results from m3 holds in m5:
+p_m5_prob <- plot_pred_prob_rater_sex(res_m5$probs, "Model 5", outcome_var = "autism_score_ordinal")
 
-# fit_age_interaction = readRDS("results/models/fit_age_interaction_clmm.rds")
-# res_rater_sex <- get_rater_sex_emmeans(fit_age_interaction, outcome_var = "autism_score_ordinal")
-# p_rater_sex_prob = plot_pred_prob_rater_sex(res_rater_sex$probs, "Model Rater-Sex", outcome_var = "autism_score_ordinal")
 
 # sensitivity analyses
 res_m3_sensitivity <- get_rater_sex_emmeans(fit_m3_sensitivity, outcome_var = "autism_score_ordinal_sensitivity")

@@ -30,8 +30,6 @@ boxplot(data$agem12, main = "Mother", ylab = "Age")
 boxplot(data$agetrf12, main = "Teacher", ylab = "Age") # very low values. Younger siblings? Weird.
 table(data$agetrf12) # very low values. Younger siblings? Weird.
 
-boxplot(data$ages12, main = "Self") # very high values. Older siblings are in the dataset
-
 # looking at an effect of date/birth cohort on the autism scores
 # boxplot(data$m12_aut_sum ~ data$invjrm12, main = "Mother", xlab = "Date of assessment (numeric)", ylab = "Autism score")
 # lm(data$m12_aut_sum ~ data$invjrm12)
@@ -44,7 +42,7 @@ boxplot(data$ages12, main = "Self") # very high values. Older siblings are in th
 data <- data %>%
   mutate( # Has to be done with mutate to not drop entire rows
     across( # the lower bound
-      c(agem12, agev12, agetrf12, ages12),
+      c(agem12, agev12, agetrf12),
       ~ {
         m <- mean(.x, na.rm = TRUE)
         # s <- sd(.x, na.rm = TRUE)
@@ -58,7 +56,7 @@ data <- data %>%
   ) %>%
   mutate( # the upper bound
     across(
-      c(ages14, ages12),
+      c(ages14),
       ~ {
       m = mean(.x, na.rm = TRUE)
       # s = sd(.x, na.rm = TRUE)
@@ -78,13 +76,11 @@ boxplot(data$agev12, main = "Father", ylab = "Age")
 boxplot(data$agetrf12, main = "Teacher", ylab = "Age") # very low values are now gone
 table(data$agetrf12) # very low values are now gone
 
-boxplot(data$ages12, main = "Self", ylab = "Autism score") # very high values. Older siblings are in the dataset
-
 # filtering participants
 data = data %>%
   filter(
     EUR_1KG_Outlier == 0, # filter out people not of european ancestry
-    !if_all(c(m12_aut_sum, v12_aut_sum, t12_aut_sum, ysr14_aut_sum, ysr12_aut_sum), is.na), # drop rows with NA for all rater types to clean it up a bit
+    !if_all(c(m12_aut_sum, v12_aut_sum, t12_aut_sum, ysr14_aut_sum), is.na), # drop rows with NA for all rater types to clean it up a bit
     !is.na(sex) # drop participants for which chromosomal sex is NA
     )  
 
@@ -95,29 +91,25 @@ nrow(data)
 
 # set sex to Male and Female using enumeration in factors. set 1 to male and 2 to female
 data$sex <- factor(data$sex, levels = c(1, 2), labels = c("Male", "Female"))
-data$genderlkrt12 <- factor(data$genderlkrt12, levels = c(1, 2), labels = c("Male", "Female"))
 
 # creating a check if all raters (for the main analysis) are present for this individual. Used in later analyses
 data <- data %>%
-  mutate(all_rater_present = ifelse(!is.na(m12_aut_sum) & !is.na(v12_aut_sum) & !is.na(t12_aut_sum) & !is.na(ysr14_aut_sum), TRUE, FALSE))
+  mutate(all_rater_present = ifelse(!is.na(m12_aut_sum) & !is.na(v12_aut_sum) & !is.na(t12_aut_sum), TRUE, FALSE))
+
+# --- SCALING PGS AND PCs ---
+# Rename PGS and PCs
+data = data %>%
+  rename(PGS = P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1) %>%
+  rename_with(~ gsub("_1KG", "", .), starts_with("PC")) # Quick rename for PCs
+
+
+genomic_vars_to_scale <- c("PGS", paste0("PC", 1:10))
+data = data %>%
+  mutate(across(all_of(genomic_vars_to_scale),
+                ~ as.numeric(scale(.)), .names = "{col}_scaled")) 
 
 # check data types
 sapply(data, class)
-
-
-# --- creating separate datasets for each rater ---
-
-create_rater_dataset <- function(data, filter_col, pheno_cols_general, geno_cols_general, pheno_cols_rater, sum_col) {
-  data %>%
-    filter(.data[[filter_col]] == 1) %>%
-    select(
-      all_of(pheno_cols_general),
-      all_of(geno_cols_general),
-      all_of(pheno_cols_rater),
-      !!sym(sum_col)
-    ) %>%
-    select(-all_of(filter_col))
-}
 
 data_all_items = data # save full dataset with all cols available (including individual items etc)
 
@@ -159,14 +151,14 @@ date_long = data %>%
 
 # Match age_key to rater. Define a lookup table for mapping age_key -> rater
 age_map <- tibble(
-  age_key = c("agem12", "agev12", "agetrf12", "ages14", "ages12"),
-  rater = c("m12", "v12", "t12", "ysr14", "ysr12")
+  age_key = c("agem12", "agev12", "agetrf12", "ages14"),
+  rater = c("m12", "v12", "t12", "ysr14")
 )
 
 # Match age_key to rater. Define a lookup table for mapping age_key -> rater
 date_assessment_map <- tibble(
-  date_key = c("invjrm12", "invjrv12", "invjrt12", "invjrs14", "invjrs12"),
-  rater = c("m12", "v12", "t12", "ysr14", "ysr12")
+  date_key = c("invjrm12", "invjrv12", "invjrt12", "invjrs14"),
+  rater = c("m12", "v12", "t12", "ysr14")
 )
 
 
@@ -181,9 +173,6 @@ data_long <- left_join(data_long, date_mapped) # test this
 # deselect unnessesary columns that have been merged above
 data_long <- data_long %>% select(-invjrm12, -invjrv12, -invjrt12, -invjrs14, -invjrs12, -invjrm12, -date_key, -age_key, -agem12, -agev12, -agetrf12, -ages14, -ages12, -m12_aut_sum, -v12_aut_sum, -t12_aut_sum, -ysr14_aut_sum, -m12_aut_sum_sensitivity, -v12_aut_sum_sensitivity, -t12_aut_sum_sensitivity, -ysr14_aut_sum_sensitivity) 
 
-data_long$rater <- factor(data_long$rater, levels = c("m12", "v12", "t12", "ysr14", "ysr12"), labels = c("Mother", "Father", "Teacher", "Self", "Self_age_12")) # convert rater to factor
-
-
 # --- Some more filtering and creating the ordinal autism score variable ---
 
 # filtering data_long to remove rows with NA values, cleans up the data and gives accurate sample sizes in descriptives.R
@@ -195,13 +184,12 @@ data_long = data_long %>%
          !is.na(PLATFORM),
          !is.na(rater),
          !is.na(sex),
-         !is.na(PC1_1KG), !is.na(PC2_1KG), !is.na(PC3_1KG), !is.na(PC4_1KG), !is.na(PC5_1KG), !is.na(PC6_1KG), !is.na(PC7_1KG), !is.na(PC8_1KG), !is.na(PC9_1KG), !is.na(PC10_1KG),
-         !is.na(P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1),
+         !is.na(PC1), !is.na(PC2), !is.na(PC3), !is.na(PC4), !is.na(PC5), !is.na(PC6), !is.na(PC7), !is.na(PC8), !is.na(PC9), !is.na(PC10),
+         !is.na(PGS),
          !is.na(FamilyNumber), 
          !is.na(FISNumber)
          )
 nrow(data_long)
-
 
 # ordinalize autism score into three levels: 0, 1-3, 4+
 data_long = data_long %>%
@@ -220,18 +208,21 @@ data_long = data_long %>%
 
 # --- PRE-PROCESSING & FORMATTING ---
 
-# Rename PGS and PCs
-data_long = data_long %>%
-  rename(PGS = P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1) %>%
-  rename_with(~ gsub("_1KG", "", .), starts_with("PC")) # Quick rename for PCs
+data_long$rater <- factor(data_long$rater, levels = c("m12", "v12", "t12", "ysr14"), labels = c("Mother", "Father", "Teacher", "Self")) 
+
+# for accurate modelling we want to make categorical variables into effect coding
+data_long <- data_long %>%
+  mutate(sex_effect = sex)
+
+contrasts(data_long$sex_effect) <- c(-0.5, 0.5)
+contrasts(data_long$PLATFORM) <- "contr.sum"
+contrasts(data_long$rater) <- "contr.sum"
 
 # Scaling Continuous Variables
-# We scale PCs, PGS, and both versions of the continuous autism score (for linear models)
-vars_to_scale <- c("PGS", paste0("PC", 1:10), "autism_score", "autism_score_sensitivity", "age", "date_of_assessment")
-
 data_long = data_long %>%
-  mutate(across(all_of(vars_to_scale),
-                ~ as.numeric(scale(.)), .names = "{col}_scaled")) 
+  mutate(age_centered = scale(age, center = TRUE, scale = FALSE),
+         date_of_assessment_centered = scale(date_of_assessment, center = TRUE, scale = FALSE))
+
 
 # Check data types
 sapply(data_long, class)
@@ -242,6 +233,4 @@ class(data_long$autism_score_ordinal)
 saveRDS(data, "data/processed/02_full_dataset_clean.rds")
 saveRDS(data_long, "data/processed/02_full_dataset_long.rds")
 saveRDS(data_all_items, "data/processed/02_data_all_items.rds")
-
-
 

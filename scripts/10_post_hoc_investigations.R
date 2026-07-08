@@ -9,6 +9,8 @@ library(emmeans)
 library(dplyr)
 library(openxlsx)
 
+source("scripts/_10_functions.R") # source the functions from 10_post_hoc_sensitivity.R
+
 # Load the the clmm model with the best fit (model 3 & 4)
 fit_m3 <- readRDS("results/models/fit_m3_clmm.rds")
 fit_m4 <- readRDS("results/models/fit_m4_clmm.rds")
@@ -21,73 +23,13 @@ fit_m3_sensitivity_all_raters <- readRDS("results/models/sensitivity/fit_m3_clmm
 fit_m4_sensitivity_all_raters <- readRDS("results/models/sensitivity/fit_m4_clmm_sensitivity_all_raters.rds")
 
 fit_m3_sensitivity_ysr_12 <- readRDS("results/models/sensitivity/fit_ysr_12_m3_clmm_sensitivity.rds") # TODO investigate this
-fit_m4_sensitivity_ysr_12 <- readRDS("results/models/sensitivity/fit_ysr_12_m4_clmm_sensitivity.rds")
-
-
-calc_fdr_p <- function(emm_obj, method = "fdr") {
-  p_vals <- summary(emm_obj)$p.value
-
-  out <- as.data.frame(emm_obj) %>%
-    rename(any_of(c(
-      "p_unadjusted"   = "p.value",
-      "p_unadjusted"   = "p-value",
-      "p_unadjusted"   = "p_value"
-    )))
-
-  # out$p_fdr <- p.adjust(out$p_unadjusted, method = method)
-  out$p_fdr <- p.adjust(p_vals, method = method)
-
-  out
-}
-
-rename_prob_columns <- function(emm_obj) {
-  out <- as.data.frame(emm_obj)
-
-  out <- out %>%
-    mutate(
-      `Probability Difference` = estimate,
-      SE = SE,
-      `Prob 95% CI Lower` = estimate - 1.96 * SE,
-      `Prob 95% CI Upper` = estimate + 1.96 * SE
-    ) %>%
-    select(-estimate, -SE) # remove the original 'estimate' column as it's now represented as 'Probability'
-
-  out
-}
-
-rename_columns <- function(emm_obj) {
-  out <- as.data.frame(emm_obj)
-
-  target_col <- intersect(c("estimate", "emmean", "PGS_scaled.trend"), names(out))[1]
-
-  if (!is.na(target_col)) { # else it is a log-odds estimate
-    out <- out %>%
-      mutate(
-        `Odds Ratio`      = exp(.data[[target_col]]),
-        `OR 95% CI Lower` = exp(.data[[target_col]] - 1.96 * SE),
-        `OR 95% CI Upper` = exp(.data[[target_col]] + 1.96 * SE)
-      )
-  }
-
-  out <- out %>%
-    rename(any_of(c(
-      "p-value"                            = "p.value",
-      "Estimated Probability"              = "prob",
-      "Estimate difference (log-odds)"     = "estimate",
-      "Estimated Marginal Mean (log-odds)" = "emmean",
-      "Slope of PGS (scaled) in log-odds"  = "PGS_scaled.trend"
-    ))) %>%
-    select(-contains("asymp.LCL"), -contains("asymp.UCL"))
-
-  return(out)
-}
 
 
 # --- Two way interaction effects post hoc investigations ---
 
 # estimated marginal means for rater type within each sex
 get_emm_rater_sex <- function(fit_model, at = list(PGS_scaled = 0)) {
-  emmeans(fit_model, ~ rater * sex,
+  emmeans(fit_model, ~ rater * sex_effect,
     at = at, # this averages over the specified values for the estimated marginal means (default is at the mean of PGS (0))
     mode = "latent",
     cov.reduce = mean
@@ -96,7 +38,7 @@ get_emm_rater_sex <- function(fit_model, at = list(PGS_scaled = 0)) {
 
 # estimated probabilities for individual autism score levels within each rater type and sex
 get_eprob_rater_sex <- function(fit_model, outcome_var) {
-  formula_str <- paste("~ sex *", outcome_var, "| rater")
+  formula_str <- paste("~ sex_effect *", outcome_var, "| rater")
   emmeans(fit_model, as.formula(formula_str), # "within each rater what is the prob for the autism score levels?"
     mode = "prob",
     cov.reduce = mean # this averages over PGS and other covariates
@@ -109,7 +51,7 @@ get_eprob_rater_sex <- function(fit_model, outcome_var) {
 get_slopes_three_way <- function(fit_model) {
   emtrends(
     fit_model,
-    ~ rater * sex,
+    ~ rater * sex_effect,
     var = "PGS_scaled",
     mode = "latent"
   )
@@ -141,7 +83,7 @@ lst_results <- function(two_way_model, three_way_model, outcome_var) {
       contrast(
         get_emm_rater_sex(two_way_model),
         method = "pairwise",
-        by = "sex",
+        by = "sex_effect",
         adjust = "none"
       ) %>% calc_fdr_p() %>% rename_columns(),
 
@@ -162,7 +104,7 @@ lst_results <- function(two_way_model, three_way_model, outcome_var) {
       contrast(
         get_eprob_rater_sex(two_way_model, outcome_var),
         method = "pairwise",
-        by = c("sex", outcome_var),
+        by = c("sex_effect", outcome_var),
         adjust = "none"
       ) %>% calc_fdr_p() %>% rename_prob_columns(),
 
@@ -184,7 +126,7 @@ lst_results <- function(two_way_model, three_way_model, outcome_var) {
       contrast(
         get_slopes_three_way(three_way_model),
         method = "pairwise",
-        by = "sex",
+        by = "sex_effect",
         adjust = "none"
       ) %>% calc_fdr_p() %>% rename_columns()
   )

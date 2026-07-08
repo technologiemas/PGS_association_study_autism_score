@@ -5,7 +5,6 @@ rm(list = ls(all = TRUE))
 gc()
 
 library(ordinal)
-library(car)
 library(performance)
 library(emmeans)
 
@@ -16,12 +15,8 @@ fit_m4 <- readRDS("results/models/fit_m4_clmm.rds")
 fit_m5 <- readRDS("results/models/fit_m5_clmm.rds")
 
 # uncomment these to see results of sensitivity analysis models
-# fit_m1 <- readRDS("results/models/sensitivity/fit_m1_clmm_sensitivity.rds")
-# fit_m2 <- readRDS("results/models/sensitivity/fit_m2_clmm_sensitivity.rds")
 # fit_m3 <- readRDS("results/models/sensitivity/fit_m3_clmm_sensitivity.rds")
 # fit_m4 <- readRDS("results/models/sensitivity/fit_m4_clmm_sensitivity.rds")
-# fit_m5 <- readRDS("results/models/sensitivity/fit_m5_clmm_sensitivity.rds")
-
 
 # --- MODEL SUMMARIES ---
 # summary(fit_m1)
@@ -35,7 +30,6 @@ fit_m5 <- readRDS("results/models/fit_m5_clmm.rds")
 anova(fit_m1, fit_m2, fit_m3, fit_m4, fit_m5) # models 3 and 4 are best
 
 # best models performance checks
-
 performance(fit_m1)
 performance(fit_m2)
 performance(fit_m3)
@@ -48,15 +42,9 @@ table(mf$sex, mf$rater)
 table(mf$sex, mf$rater, mf$autism_score_ordinal)
 
 # collinearity checks
-check_collinearity(fit_m2) # without interaction terms as VIF will be unreliable because of these
-# results look fine
-check_collinearity(fit_m3)
-check_collinearity(fit_m4)
-
-car::vif(fit_m2) # results with this package look fine too
-car::vif(fit_m3)
-car::vif(fit_m4)
-car::vif(fit_m5) # <- TODO: check this one!
+check_collinearity(fit_m2)
+check_collinearity(fit_m3) 
+check_collinearity(fit_m4) # all look fine
 
 # chisq and wald test of each predictor in best fitting models following emmeans joint_tests
 joint_tests(fit_m3,
@@ -73,19 +61,10 @@ joint_tests(fit_m4,
                          "PC10_scaled",
                          "PLATFORM"))
 
-joint_tests(fit_m5,
-            nuisance = c("PC1_scaled",  "PC2_scaled",  "PC3_scaled",
-                         "PC4_scaled",  "PC5_scaled",  "PC6_scaled",
-                         "PC7_scaled",  "PC8_scaled",  "PC9_scaled",
-                         "PC10_scaled",
-                         "PLATFORM"
-                         ), rg.limit = 196608)
-
 correlations_predictors = cov2cor(vcov(fit_m3)) # no very high correlations
 
 library(openxlsx)
 openxlsx::write.xlsx(correlations_predictors, "results/correlations_predictors_m3.xlsx")
-
 
 
 

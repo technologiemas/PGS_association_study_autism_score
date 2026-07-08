@@ -11,8 +11,7 @@ library(haven)
 # --- LOAD DATA ---
 data = readRDS("data/processed/02_full_dataset_long.rds")
 data_mother = data %>%
-  filter(rater == "Mother") %>%
-  select(-rater)
+  filter(rater == "Mother")
 
 genotype_data = read_sav("./data/raw/NTR-DSR-5023_AutismSpectrumDisorder_PMID30804558_MRG18_PedMergedWithScores.sav")
 
@@ -37,19 +36,6 @@ correlations_pgs = cor(all_pgs)
 all_pgs = all_pgs %>%
   mutate(across(everything(), ~ as.numeric(scale(.)), .names = "{col}_scaled"))
 
-# rename PCs
-data_mother = data_mother %>%
-  rename(PC1 = PC1_1KG,
-         PC2 = PC2_1KG,
-         PC3 = PC3_1KG,
-         PC4 = PC4_1KG,
-         PC5 = PC5_1KG,
-         PC6 = PC6_1KG,
-         PC7 = PC7_1KG,
-         PC8 = PC8_1KG,
-         PC9 = PC9_1KG,
-         PC10 = PC10_1KG)
-
 # join all_pgs and mother on FISNumber
 all_pgs = all_pgs %>%
   mutate(FISNumber = as.factor(FISNumber))
@@ -62,20 +48,12 @@ data_mother = data_mother %>%
 # autism score will be ordinalized with three levels: 0, 1-3, 4+ (no, mild, high)
 # all categorical variables will be converted to factors (e.g., PLATFORM, rater, sex)
 
-data_mother = data_mother %>%
-  mutate(across(c("agem12", "PC1", "PC2", "PC3", "PC4", "PC5", "PC6", "PC7", "PC8", "PC9", "PC10", "m12_aut_sum"),
-                ~ as.numeric(scale(.)), .names = "{col}_scaled"))
-
-data_mother = data_mother %>%
-  mutate(PLATFORM = haven::zap_labels(PLATFORM), sex = haven::zap_labels(sex)) %>%
-  mutate(across(c(PLATFORM, sex, FISNumber, FamilyNumber), as.factor))
-
 # --- MODELING ---
 library(ordinal)
 
 # function to run ordinal logistic regression for each pgs with covariates and random effect for family
 run_ordinal_logistic_regression = function(data, pgs_col) {
-  formula = as.formula(paste("autism_score_ordinal ~", pgs_col, "+ (1 | FamilyNumber) + age_scaled + sex + PLATFORM + PC1_scaled + PC2_scaled + PC3_scaled + PC4_scaled + PC5_scaled + PC6_scaled + PC7_scaled + PC8_scaled + PC9_scaled + PC10_scaled"))
+  formula = as.formula(paste("autism_score_ordinal ~", pgs_col, "+ (1 | FamilyNumber) + age_centered + sex + PLATFORM + PC1_scaled + PC2_scaled + PC3_scaled + PC4_scaled + PC5_scaled + PC6_scaled + PC7_scaled + PC8_scaled + PC9_scaled + PC10_scaled"))
   model = clmm(formula, data = data, Hess = TRUE)
   return(summary(model))
 }
