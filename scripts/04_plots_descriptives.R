@@ -2,7 +2,7 @@ rm(list = ls(all = TRUE))
 gc()
 
 library(ggplot2)
-library(ggridges)
+# library(ggridges)
 library(ggpubr)
 library(dplyr)
 library(tidyr)
@@ -109,6 +109,11 @@ ggsave("results/figures/autism_score_histogram.png", width = 8, height = 10, dpi
 
 histogram_plots = function(data, var, bins) {
   # date_of_assessment histogram separated per rater
+  data = data %>%
+    mutate(
+      sex = factor(sex, levels = c("Female", "Male"))
+    )
+
   ggplot(data, aes(x = {{var}}, fill = sex)) +
     geom_histogram(
       binwidth = bins,
@@ -144,3 +149,4 @@ ggsave(plot=date_plot, "results/figures/date_of_assessment_histogram.png", width
 ggsave(plot=age_plot, "results/figures/age_histogram.png", width = 8, height = 10, dpi=600)
 ggsave(plot=age_12_plot, "results/figures/age_12_histogram.png", width = 8, height = 10, dpi=600)
 ggsave(plot=date_12_plot, "results/figures/date_12_histogram.png", width = 8, height = 10, dpi=600)
+

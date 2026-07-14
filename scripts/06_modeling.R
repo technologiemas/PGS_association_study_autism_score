@@ -20,10 +20,9 @@ data_long_ysr12 = readRDS("data/processed/02_full_dataset_long_self_age_12.rds")
 data_long_all_raters_present = data_long %>%
   filter(all_rater_present)
 
-
 # --- MODEL FORMULA DEFINITIONS ---
 
-random_effects = "(1 | FamilyNumber / FISNumber) +"
+random_effects = "(1 | FamilyNumber) + (1 | FISNumber) +"
 
 covariates = "(PLATFORM + age_centered + date_of_assessment_centered +
           PC1_scaled + PC2_scaled + PC3_scaled + PC4_scaled + PC5_scaled +
@@ -42,12 +41,7 @@ m3_formula = paste(m2_formula, "+ PGS_scaled * rater + PGS_scaled * sex_effect +
 m4_formula = paste(m3_formula, "+ PGS_scaled * sex_effect * rater")
 
 # Model 5, includes Keller adjustment for three- and two-way interactions between covariates and GxExE (PGSxRaterxSex)
-m5_formula = paste(
-  m4_formula,
-  "+",
-  covariates,
-  "* (PGS_scaled * sex_effect + PGS_scaled * rater + sex_effect * rater)"
-)
+m5_formula = paste(m4_formula, "+", covariates, "* (PGS_scaled * sex_effect + PGS_scaled * rater + sex_effect * rater)")
 
 # checking if the formulas expand correctly
 form <- as.formula(paste("autism_score_ordinal ~", m5_formula))
@@ -110,7 +104,7 @@ fit_sub_m4 <- run_ordinal_clmm(m4_main, data_long_all_raters_present)
 
 # 2C. Sensitivity - YSR12 Subset (Self Rater, Age 12)
 # m3_ysr_12 = "autism_score_ordinal ~ (1 | FamilyNumber) + PLATFORM + age_centered + date_of_assessment_centered + PC1_scaled + PC2_scaled + PC3_scaled + PC4_scaled + PC5_scaled + PC6_scaled + PC7_scaled + PC8_scaled + PC9_scaled + PC10_scaled + PGS_scaled * sex_effect"
-m3_ysr_12 = "autism_score_ordinal ~ (1 | FamilyNumber) + age_centered + date_of_assessment_centered + sex_effect + age_centered"
+m3_ysr_12 = "autism_score_ordinal ~ (1 | FamilyNumber) + age_centered + date_of_assessment_centered + sex_effect"
 fit_ysr_12 <- run_ordinal_clmm(m3_ysr_12, data_long_ysr12)
 
 dir.create("results/models/sensitivity", showWarnings = FALSE, recursive = TRUE)
@@ -125,4 +119,5 @@ saveRDS(fit_sub_m4, "results/models/sensitivity/fit_m4_clmm_sensitivity_all_rate
 
 # Save YSR12 Data Sensitivity
 saveRDS(fit_ysr_12, "results/models/sensitivity/fit_ysr_12_clmm_sensitivity.rds")
+
 

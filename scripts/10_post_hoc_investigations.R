@@ -142,7 +142,7 @@ drop_df_columns <- function(list_of_tables) {
 
 post <- lst_results(fit_m3, fit_m4, "autism_score_ordinal")
 post_sensitivity <- lst_results(fit_m3_sensitivity, fit_m4_sensitivity, "autism_score_ordinal_sensitivity")
-post_sensitivity_all_raters <- lst_results(fit_m3_sensitivity_all_raters, fit_m4_sensitivity_all_raters, "autism_score_ordinal_sensitivity")
+post_sensitivity_all_raters <- lst_results(fit_m3_sensitivity_all_raters, fit_m4_sensitivity_all_raters, "autism_score_ordinal")
 post_sensitivity_ysr_12 <- lst_results(fit_m3_sensitivity_ysr_12, fit_m4_sensitivity_ysr_12, "autism_score_ordinal")
 
 # remove df columns which are not meaningful for clmm models

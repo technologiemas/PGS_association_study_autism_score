@@ -18,7 +18,7 @@ get_rater_sex_emmeans <- function(model_fit, outcome_var) {
 
   emm <- emmeans(
     model_fit,
-    as.formula(paste("~ sex *", outcome_var, "| rater")),
+    as.formula(paste("~ sex_effect *", outcome_var, "| rater")),
     mode = "prob",
     # at = list(PGS = 2), # uncomment to predict at a specific PGS value (e.g., 2 SDs above the mean). This is clinically relevant as it represents individuals with a high genetic liability for autism. If left commented, the predictions will be made at the mean PGS (PGS = 0).
     cov.reduce = mean # takes a mean of covariates for prediction, including PGS
@@ -27,8 +27,8 @@ get_rater_sex_emmeans <- function(model_fit, outcome_var) {
   probs <- as.data.frame(emm) %>%
     mutate(
       rater = rater,
-      sex = sex,
-      !!outcome_var := get(outcome_var)
+      sex = sex_effect,
+      !!outcome_var := .data[[outcome_var]]
     )
 
   contr <- contrast(
@@ -45,7 +45,7 @@ get_rater_sex_emmeans <- function(model_fit, outcome_var) {
       upper = estimate + 1.96 * SE,
       diff_prob = estimate,
       rater = rater,
-      !!outcome_var := get(outcome_var)
+      !!outcome_var := .data[[outcome_var]]
     )
 
   list(
@@ -58,11 +58,11 @@ get_rater_sex_emmeans <- function(model_fit, outcome_var) {
 # --- rater * sex plots ---
 
 plot_pred_prob_rater_sex <- function(probs_df, model_label, outcome_var) {
-  
+
   probs_df[[outcome_var]] <- factor(
     probs_df[[outcome_var]],
     levels = c(1, 2, 3),
-    labels = c("no", "mild", "high")
+    labels = c("No", "Low", "High")
   )
 
   ggplot(
@@ -97,6 +97,12 @@ plot_pred_prob_rater_sex <- function(probs_df, model_label, outcome_var) {
 
 plot_pairwise_contrasts_rater_sex <- function(contr_df, model_label, outcome_var) {
 
+  contr_df[[outcome_var]] <- factor(
+    contr_df[[outcome_var]],
+    levels = c(1, 2, 3),
+    labels = c("No", "Low", "High")
+  )
+
   ggplot(
     contr_df,
     aes(
@@ -105,16 +111,19 @@ plot_pairwise_contrasts_rater_sex <- function(contr_df, model_label, outcome_var
     )
   ) +
     geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
-    geom_point(aes(color = get(outcome_var)), size = 3) +
+    geom_point(aes(color = .data[[outcome_var]]), size = 3) +
     geom_errorbarh(
-      aes(xmin = lower, xmax = upper, color = get(outcome_var)),
+      aes(xmin = lower, xmax = upper, color = .data[[outcome_var]]),
       height = 0.2
     ) +
     scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
+      scale_color_manual(
+        values = c("no" = "#1B9E77", "low" = "#D95F02", "high" = "#7570B3"),
+        name = "Autism score level"
+      ) +
     labs(
       x = "Difference in predicted probability (95% CI)",
       y = "Rater",
-      color = paste(outcome_var, "level"),
       subtitle = "Male − Female",
       caption = paste("Based on", model_label)
     ) +
@@ -129,7 +138,7 @@ get_three_way_emmeans <- function(model_fit, pgs_range = seq(-3, 3, 0.1), outcom
 
   emm <- emmeans(
     model_fit,
-    as.formula(paste("~ sex *", outcome_var, "| PGS_scaled * rater")),
+    as.formula(paste("~ sex_effect *", outcome_var, "| PGS_scaled * rater")),
     mode = "prob",
     at = list(PGS_scaled = pgs_range)
   )
@@ -137,12 +146,18 @@ get_three_way_emmeans <- function(model_fit, pgs_range = seq(-3, 3, 0.1), outcom
   as.data.frame(emm) %>%
     mutate(
       rater = rater,
-      sex = sex,
-      !!outcome_var := get(outcome_var)
+      sex = sex_effect,
+      !!outcome_var := .data[[outcome_var]]
     )
 }
 
 plot_three_way <- function(df, model_label, outcome_var) {
+
+  df[[outcome_var]] <- factor(
+    df[[outcome_var]],
+    levels = c(1, 2, 3),
+    labels = c("No", "Low", "High")
+  )
 
   ggplot(
     df,
@@ -150,8 +165,8 @@ plot_three_way <- function(df, model_label, outcome_var) {
       x = PGS_scaled,
       y = prob,
       color = sex,
-      linetype = get(outcome_var),
-      group = interaction(get(outcome_var), sex)
+      linetype = .data[[outcome_var]],
+      group = interaction(.data[[outcome_var]], sex)
     )
   ) +
     geom_ribbon(
@@ -164,7 +179,10 @@ plot_three_way <- function(df, model_label, outcome_var) {
     facet_wrap(~ rater, ncol = 2) +
     scale_color_manual(values = colors) +
     scale_fill_manual(values = colors) +
-    scale_linetype_manual(values = c("dotted", "longdash", "solid")) +
+    scale_linetype_manual(
+      values = c("No" = "dotted", "Low" = "longdash", "High" = "solid"),
+      name = "Autism score level"
+    ) +
     scale_y_continuous(labels = scales::percent) +
     labs(
       x = "PGS (SDs)",
@@ -176,7 +194,13 @@ plot_three_way <- function(df, model_label, outcome_var) {
 
 plot_three_way_high_only <- function(df, model_label, outcome_var) {
 
-  df_high <- subset(df, get(outcome_var) == "3")
+  df[[outcome_var]] <- factor(
+    df[[outcome_var]],
+    levels = c(1, 2, 3),
+    labels = c("No", "Low", "High")
+  )
+
+  df_high <- dplyr::filter(df, .data[[outcome_var]] == "High")
 
   ggplot(
     df_high,
@@ -250,11 +274,17 @@ plot_barplot_predicted_probabilities <- function(model_fit = fit_m3, outcome_var
   # 1. Generate the predicted probabilities from your model
   # 'mode = "prob"' ensures we get the probability for each ordinal level
 
-  emms_prob <- emmeans(model_fit, ~ sex * get(outcome_var)| rater, mode = "prob")
+  emms_prob <- emmeans(model_fit, as.formula(paste("~ sex *", outcome_var, "| rater")), mode = "prob")
   plot_data <- as.data.frame(emms_prob)
 
+  plot_data[[outcome_var]] <- factor(
+    plot_data[[outcome_var]],
+    levels = c(1, 2, 3),
+    labels = c("No", "Low", "High")
+  )
+
   # 2. Create the Stacked Bar Chart
-  ggplot(plot_data, aes(x = sex, y = prob, fill = factor(outcome_var))) +
+  ggplot(plot_data, aes(x = sex, y = prob, fill = factor(.data[[outcome_var]]))) +
     # Create the bars
     geom_col(position = "stack", color = "white", width = 0.7) +
     # Add the percentage labels inside the bars
@@ -267,7 +297,7 @@ plot_barplot_predicted_probabilities <- function(model_fit = fit_m3, outcome_var
     # Separate by rater type for side-by-side comparison
     facet_wrap(~ rater, nrow = 1) + 
     # Formatting and Colors
-    scale_fill_brewer(palette = "Blues", name = "Autism Score Level") +
+    scale_fill_brewer(palette = "Blues", name = "Autism score level") +
     scale_y_continuous(labels = percent_format()) +
     labs(
       title = "Predicted Autism Score Levels by Sex and Rater",
@@ -288,7 +318,7 @@ plot_barplot_predicted_probabilities <- function(model_fit = fit_m3, outcome_var
 
 fit_m3 <- readRDS("results/models/fit_m3_clmm.rds")
 fit_m4 <- readRDS("results/models/fit_m4_clmm.rds")
-fit_m5 <- readRDS("results/models/fit_m4_clmm.rds")
+fit_m5 <- readRDS("results/models/fit_m5_clmm.rds")
 
 fit_m3_sensitivity <- readRDS("results/models/sensitivity/fit_m3_clmm_sensitivity.rds")
 fit_m4_sensitivity <- readRDS("results/models/sensitivity/fit_m4_clmm_sensitivity.rds")
@@ -358,7 +388,7 @@ save_plots <- function(plot, filename) {
     filename,
     plot,
     device = "png",
-    width = 8.4, height = 6, units = "cm",
+    width = 8.4, height = 11, units = "cm",
     dpi = 600, scale = 1.4
   )
 }
@@ -366,7 +396,9 @@ save_plots <- function(plot, filename) {
 # save_plots(p_m3_prob_sensitivity_all_raters, "results/figures/sensitivity_all_raters/pred_prob.png")
 
 
-save_plots(p_m3_prob, "results/figures/test_plot.png")
+# save_plots(p_m3_prob, "results/figures/test_plot.png")
 
-# save_plots(p_rater_sex_prob, "results/figures/age_interaction.png")
-# save_plots(p_m5_prob, "results/figures/m5_pred_prob.png")
+save_plots(p_m4_three_way, "results/figures/pgs_sex_rater.png")
+save_plots(p_m4_three_way_high_only, "results/figures/pgs_sex_rater_high_only.png")
+
+

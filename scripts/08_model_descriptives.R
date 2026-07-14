@@ -8,6 +8,8 @@ library(broom.mixed)
 library(emmeans)
 library(openxlsx)
 library(ordinal)
+library(car)
+library(dplyr)
 
 # --- HIERARCHICAL MODELS ---
 
@@ -21,6 +23,10 @@ mf_3 <- model.frame(fit_m3)
 mf_4 <- model.frame(fit_m4)
 mf_5 <- model.frame(fit_m5)
 
+
+Anova(fit_m3, type = "III") 
+Anova(fit_m4, type = "III") 
+Anova(fit_m5, type = "III") 
 
 psych::describe(mf_3)
 # describe for male and female separately
@@ -72,20 +78,16 @@ distribution_scores_m3 <- get_score_distribution(mf_3)
 distribution_scores_m4 <- get_score_distribution(mf_4)
 distribution_scores_m5 <- get_score_distribution(mf_5)
 
+model_results_m2 <- list_model_results(fit_m2)
 model_results_m3 <- list_model_results(fit_m3)
 model_results_m4 <- list_model_results(fit_m4)
 model_results_m5 <- list_model_results(fit_m5)
 
-
+# TODO do we want to include model outputs?
 lst_results <- list(
   "model_3_output" = model_results_m3,
   "model_4_output" = model_results_m4,
-  "model_4_joint_tests" = joint_tests(fit_m4,
-            nuisance = c("PC1_scaled",  "PC2_scaled",  "PC3_scaled",
-                         "PC4_scaled",  "PC5_scaled",  "PC6_scaled",
-                         "PC7_scaled",  "PC8_scaled",  "PC9_scaled",
-                         "PC10_scaled",
-                         "PLATFORM")),
+  "model_4_anova" = Anova(fit_m4, type = "III"),
   "model_5_output" = model_results_m5,
   "autism_scores_lvls_distribution" = distribution_scores_m3
 )
