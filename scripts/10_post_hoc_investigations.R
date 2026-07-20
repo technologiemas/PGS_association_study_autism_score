@@ -60,9 +60,9 @@ get_slopes_three_way <- function(fit_model) {
 # collect results and save as excel files
 lst_results <- function(two_way_model, three_way_model, outcome_var) {
   list(
-    emm = summary(get_emm_rater_sex(two_way_model), infer = c(TRUE, TRUE)) %>% calc_fdr_p() %>% rename_columns(), 
+    `Model 3 EMM` = summary(get_emm_rater_sex(two_way_model), infer = c(TRUE, TRUE)) %>% calc_fdr_p() %>% rename_columns(), 
     
-    contrast_emm_sex =
+    `Model 3 EMM contrasts sexes` =
       contrast(
         get_emm_rater_sex(two_way_model),
         method = "pairwise",
@@ -70,7 +70,7 @@ lst_results <- function(two_way_model, three_way_model, outcome_var) {
         adjust = "none"
       ) %>% calc_fdr_p() %>% rename_columns(),
 
-    contrast_sex_pgs_2sd =
+    `Model 3 EMM contrasts 2SD PGS` =
       contrast(
         get_emm_rater_sex(two_way_model, at = list(PGS_scaled = 2)), # this is the contrast at 2SD above the mean of PGS
         method = "pairwise",
@@ -79,7 +79,7 @@ lst_results <- function(two_way_model, three_way_model, outcome_var) {
       ) %>% calc_fdr_p() %>% rename_columns(),
 
     # pairwise contrasts between rater types within each sex
-    contrast_emm_raters =
+    `Model 3 EMM contrasts raters` =
       contrast(
         get_emm_rater_sex(two_way_model),
         method = "pairwise",
@@ -88,11 +88,11 @@ lst_results <- function(two_way_model, three_way_model, outcome_var) {
       ) %>% calc_fdr_p() %>% rename_columns(),
 
     # cumulative probabilities for each autism score level (no, low, high) within each rater type and sex
-    prob_rater_sex =
+    `Model 3 probs` =
       summary(get_eprob_rater_sex(two_way_model, outcome_var), infer = c(TRUE, TRUE)) %>% calc_fdr_p() %>% rename_columns(),
 
     # pairwise contrasts between rater types within each sex for the estimated probabilities
-    contrast_prob_sex =
+    `Model 3 probs contrast sexes` =
       contrast(
         get_eprob_rater_sex(two_way_model, outcome_var),
         method = "pairwise",
@@ -100,7 +100,7 @@ lst_results <- function(two_way_model, three_way_model, outcome_var) {
         adjust = "none"
       ) %>% calc_fdr_p() %>% rename_prob_columns(),
       
-    contrast_prob_rater =
+    `Model 3 probs contrast raters` =
       contrast(
         get_eprob_rater_sex(two_way_model, outcome_var),
         method = "pairwise",
@@ -109,11 +109,11 @@ lst_results <- function(two_way_model, three_way_model, outcome_var) {
       ) %>% calc_fdr_p() %>% rename_prob_columns(),
 
     # pgs association with latent autism score ordinal within each rater type and sex
-    `3_way_emtrends` =
+    `Model 4 PGS emtrends` =
       summary(get_slopes_three_way(three_way_model), infer = c(TRUE, TRUE)) %>% calc_fdr_p() %>% rename_columns(),
 
     # pairwise contrast between sexes of pgs association with probability of autism score ordinal within each rater type
-    `3_way_contrast_sex` =
+    `Model 4 PGS contrast sexes` =
       contrast(
         get_slopes_three_way(three_way_model),
         method = "pairwise",
@@ -122,7 +122,7 @@ lst_results <- function(two_way_model, three_way_model, outcome_var) {
       ) %>% calc_fdr_p() %>% rename_columns(),
 
     # pairwise contrast between rater types of pgs association with probability of autism score ordinal within
-    `3_way_contrast_rater` =
+    `Model 4 PGS contrast raters` =
       contrast(
         get_slopes_three_way(three_way_model),
         method = "pairwise",

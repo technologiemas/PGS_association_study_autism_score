@@ -91,7 +91,7 @@ calculate_descriptives_genotype <- function(data, PGS) {
   descriptives <- data_unique %>%
     group_by(`sex`) %>%
     summarise(
-      name = paste0(pgs_str),
+      name      = "PGS",
       n         = sum(!is.na({{PGS}})),
       `PGS (mean)`      = mean({{PGS}}, na.rm = TRUE),
       sd        = sd({{PGS}},   na.rm = TRUE),
@@ -112,6 +112,10 @@ cor_matrix_males = cor(select(data_wide, m12_aut_sum_Male, v12_aut_sum_Male, t12
 cor_all = cor(select(data, m12_aut_sum, v12_aut_sum, t12_aut_sum, ysr14_aut_sum), use = "pairwise.complete.obs")
 cor_matrix_with_sensitivity = cor(select(data, m12_aut_sum, m12_aut_sum_sensitivity, v12_aut_sum, v12_aut_sum_sensitivity, t12_aut_sum, t12_aut_sum_sensitivity, ysr14_aut_sum, ysr14_aut_sum_sensitivity), use = "pairwise.complete.obs")
 
+cor_all = tibble::rownames_to_column(as.data.frame(cor_all), var = "variable")
+cor_matrix_females = tibble::rownames_to_column(as.data.frame(cor_matrix_females), var = "variable")
+cor_matrix_males = tibble::rownames_to_column(as.data.frame(cor_matrix_males), var = "variable")
+
 # count the number of individuals for which each rater type is available for that individual
 data_overlap = data %>%
   filter(!is.na(m12_aut_sum) & !is.na(v12_aut_sum) & !is.na(t12_aut_sum) & !is.na(ysr14_aut_sum))
@@ -123,8 +127,6 @@ data_overlap_no_father = data %>%
 
 descriptives_phenotype <- calculate_descriptives_phenotype(data_long, `autism_score`)
 descriptives_genotype <- calculate_descriptives_genotype(data, `PGS`)
-data$P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1_scaled <- scale(data$PGS)
-descriptives_genotype_scaled <- calculate_descriptives_genotype(data, `PGS`)
 
 # descriptives_phenotype
 # descriptives_genotype
@@ -144,17 +146,14 @@ descriptives_phenotype = descriptives_phenotype %>%
 # --- collect results ---
 
 lst_correlations = list(
-  cor_all = cor_all,
+  `Phenotype correlations` = cor_all,
   cor_matrix_females = cor_matrix_females,
   cor_matrix_males   = cor_matrix_males
 )
-# append descriptives_genotype_scaled to descriptives_genotype
-descriptives_genotype = descriptives_genotype %>%
-  bind_rows(descriptives_genotype_scaled)
 
 lst_descriptives = list(
-  descriptives_phenotype = descriptives_phenotype,
-  descriptives_genotype = descriptives_genotype
+  `Sample descriptives` = descriptives_phenotype,
+  `Genotype descriptives` = descriptives_genotype
 )
 
 # save files

@@ -72,27 +72,18 @@ openxlsx::write.xlsx(correlations_predictors, "results/correlations_predictors_m
 # TODO: delete
 # library(ordinal)
 
-# # We need to run one for each hierarchical model as drop1 can only drop the interaction effect when one is present. So to drop the main effects we need the only main effects model (2). 
 # # Warning takes very long to run.
-# drop1_effects_m1 = drop1(fit_m1, test = "Chisq")
-# drop1_effects_m2 = drop1(fit_m2, test = "Chisq")
 # drop1_effects_m3 = drop1(fit_m3, test = "Chisq")
 # drop1_effects_m4 = drop1(fit_m4, test = "Chisq") 
-# drop1_effects_m5 = drop1(fit_m5, test = "Chisq")
 
-# saveRDS(drop1_effects_m1, "results/models/drop1_effects_m1.rds")
-# saveRDS(drop1_effects_m2, "results/models/drop1_effects_m2.rds")
 # saveRDS(drop1_effects_m3, "results/models/drop1_effects_m3.rds")
 # saveRDS(drop1_effects_m4, "results/models/drop1_effects_m4.rds")
-# saveRDS(drop1_effects_m5, "results/models/drop1_effects_m5.rds")
-# 
+
 readRDS("results/models/drop1_effects_m1.rds")
 readRDS("results/models/drop1_effects_m2.rds")
 readRDS("results/models/drop1_effects_m3.rds")
 readRDS("results/models/drop1_effects_m4.rds")
 readRDS("results/models/drop1_effects_m5.rds")
-
-
 
 # TODO: delete?? Or do I want the r2 for PGS after all
 fit_pgs <- clmm(as.formula(paste("autism_score_ordinal ~ ", m1_formula, "+ PGS_scaled")),
@@ -100,17 +91,11 @@ fit_pgs <- clmm(as.formula(paste("autism_score_ordinal ~ ", m1_formula, "+ PGS_s
               link = "logit",
               threshold = "flexible")
 
-# calculating nagelkerke's r2 for the PGS model vs the base model (only covariates)
-ll_full = logLik(fit_pgs)
-ll_null = logLik(fit_m1)
+# calculating nagelkerke's r2 for the PGS model vs the base model (only covariates/random effects)
+ll_full = logLik(fit_pgs) # the base + pgs model. as.numeric() needed?
+ll_null = logLik(fit_m1) # the base model
 n = nobs(fit_pgs)
-r2_2 = (1 - exp((2/n) * (as.numeric(ll_null) - as.numeric(ll_full)))) / (1 - exp((2/n) * as.numeric(ll_null)))
+r2_2 = (1 - exp((2/n) * ((ll_null) - (ll_full)))) / (1 - exp((2/n) * (ll_null)))
 r2_2
-
-logLik(fit_m1)
-logLik(fit_pgs)
-
-AIC(fit_m1)
-AIC(fit_pgs)
 
 anova(fit_m1, fit_pgs)

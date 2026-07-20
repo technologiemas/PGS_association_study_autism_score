@@ -102,12 +102,6 @@ data = data %>%
   rename(PGS = P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1) %>%
   rename_with(~ gsub("_1KG", "", .), starts_with("PC")) # Quick rename for PCs
 
-
-genomic_vars_to_scale <- c("PGS", paste0("PC", 1:10))
-data = data %>%
-  mutate(across(all_of(genomic_vars_to_scale),
-                ~ as.numeric(scale(.)), .names = "{col}_scaled")) 
-
 # check data types
 sapply(data, class)
 
@@ -187,22 +181,21 @@ data_long = data_long %>%
          !is.na(PC1), !is.na(PC2), !is.na(PC3), !is.na(PC4), !is.na(PC5), !is.na(PC6), !is.na(PC7), !is.na(PC8), !is.na(PC9), !is.na(PC10),
          !is.na(PGS),
          !is.na(FamilyNumber), 
-         !is.na(FISNumber)
-         )
+         !is.na(FISNumber))
 nrow(data_long)
 
 # ordinalize autism score into three levels: 0, 1-3, 4+
 data_long = data_long %>%
   mutate(autism_score_ordinal = cut(autism_score,
                                  breaks = c(-Inf, 1, 4, Inf),
-                                 labels = c("no", "mild", "high"),
-                                 right = FALSE, # so a 1 becomes mild and not no
+                                 labels = c("no", "low", "high"),
+                                 right = FALSE, # so a 1 becomes low and not no
                                  ordered_result = TRUE)) 
 
 data_long = data_long %>%
   mutate(autism_score_ordinal_sensitivity = cut(autism_score_sensitivity,
                                  breaks = c(-Inf, 1, 4, Inf),
-                                 labels = c("no", "mild", "high"),
+                                 labels = c("no", "low", "high"),
                                  right = FALSE, 
                                  ordered_result = TRUE)) 
 
@@ -217,6 +210,26 @@ data_long <- data_long %>%
 contrasts(data_long$sex_effect) <- c(-0.5, 0.5)
 contrasts(data_long$PLATFORM) <- "contr.sum"
 contrasts(data_long$rater) <- "contr.sum"
+
+
+# We want to scale PGS and PCs across participants but not across long data as then there are repeated identical values
+participants <- data %>%
+  select(FISNumber, PGS, PC1:PC10) %>%
+  mutate(
+    PGS_scaled = as.numeric(scale(PGS)),
+    across(
+      PC1:PC10,
+      ~ as.numeric(scale(.x)),
+      .names = "{.col}_scaled"
+    )
+  ) %>%
+  select(FISNumber, PGS_scaled, ends_with("_scaled"))
+
+data_long <- data_long %>%
+  left_join(
+    participants,
+    by = "FISNumber"
+  )
 
 # Scaling Continuous Variables
 data_long = data_long %>%
@@ -234,3 +247,6 @@ saveRDS(data, "data/processed/02_full_dataset_clean.rds")
 saveRDS(data_long, "data/processed/02_full_dataset_long.rds")
 saveRDS(data_all_items, "data/processed/02_data_all_items.rds")
 
+
+class(data$FISNumber)
+data[data$FISNumber == "514335102281", ]

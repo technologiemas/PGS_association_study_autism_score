@@ -128,14 +128,14 @@ nrow(data_self_12)
 data_self_12 = data_self_12 %>%
   mutate(autism_score_ordinal = cut(autism_score,
                                  breaks = c(-Inf, 1, 4, Inf),
-                                 labels = c("no", "mild", "high"),
-                                 right = FALSE, # so a 1 becomes mild and not no
+                                 labels = c("no", "low", "high"),
+                                 right = FALSE, # so a 1 becomes low and not no
                                  ordered_result = TRUE)) 
 
 data_self_12 = data_self_12 %>%
   mutate(autism_score_ordinal_sensitivity = cut(autism_score_sensitivity,
                                  breaks = c(-Inf, 1, 4, Inf),
-                                 labels = c("no", "mild", "high"),
+                                 labels = c("no", "low", "high"),
                                  right = FALSE, 
                                  ordered_result = TRUE)) 
 

@@ -46,7 +46,7 @@ get_score_distribution <- function(model_frame) {
     responseName = "n"
   )
 
-  # optional: wide format (one row per rater + sex, columns: no/mild/high)
+  # optional: wide format (one row per rater + sex, columns: no/low/high)
   distribution_scores_df <- reshape(
     distribution_scores_long,
     idvar = c("rater", "sex"),
@@ -85,11 +85,11 @@ model_results_m5 <- list_model_results(fit_m5)
 
 # TODO do we want to include model outputs?
 lst_results <- list(
-  "model_3_output" = model_results_m3,
-  "model_4_output" = model_results_m4,
-  "model_4_anova" = Anova(fit_m4, type = "III"),
-  "model_5_output" = model_results_m5,
-  "autism_scores_lvls_distribution" = distribution_scores_m3
+  "Model 3 output" = model_results_m3,
+  "Model 4 output" = model_results_m4,
+  "Model 4 ANOVAs" = Anova(fit_m4, type = "III"),
+  "Model 5 output" = model_results_m5,
+  "Autism scores levels distribution" = distribution_scores_m3
 )
 
 openxlsx::write.xlsx(lst_results, "results/model_output.xlsx") 

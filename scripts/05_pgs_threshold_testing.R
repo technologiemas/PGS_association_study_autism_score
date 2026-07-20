@@ -45,7 +45,7 @@ data_mother = data_mother %>%
 # --- SCALING/STANDARDIZING THE DATA---
 
 # all continuous variables will be scaled to mean = 0 and sd = 1 (e.g. age, pgs, pcs)
-# autism score will be ordinalized with three levels: 0, 1-3, 4+ (no, mild, high)
+# autism score will be ordinalized with three levels: 0, 1-3, 4+ (no, low, high)
 # all categorical variables will be converted to factors (e.g., PLATFORM, rater, sex)
 
 # --- MODELING ---

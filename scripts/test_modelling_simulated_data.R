@@ -107,7 +107,7 @@ library(ordinal)
 df = df %>%
   mutate(autism_score_ordinal = cut(autism_score,
                                  breaks = c(-Inf, -1, 1, Inf),
-                                 labels = c("no", "mild", "high"),
+                                 labels = c("no", "low", "high"),
                                  right = FALSE))
 
 m3ord = "autism_score_ordinal ~ (1 | FamilyNumber) + (1 | FISNumber) + 

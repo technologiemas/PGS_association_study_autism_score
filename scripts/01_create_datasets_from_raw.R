@@ -140,3 +140,4 @@ data = data %>%
 
 saveRDS(data, "data/processed/01_full_dataset.rds")
 saveRDS(data_self_12, "data/processed/01_full_dataset_self_12.rds")
+
