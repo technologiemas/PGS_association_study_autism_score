@@ -10,8 +10,7 @@ library(emmeans)
 library(dplyr)
 
 
-colors <- c("Male" = "#00C07B", "Female" = "#FFBB09") # set colors for the plots
-
+colors <- c("Male" = "#0f7674", "Female" = "#D97706") # set colors for the plots
 
 # calculate emmeans and contrasts for two way interaction
 get_rater_sex_emmeans <- function(model_fit, outcome_var) {
@@ -326,8 +325,7 @@ fit_m4_sensitivity <- readRDS("results/models/sensitivity/fit_m4_clmm_sensitivit
 fit_m3_sensitivity_all_raters <- readRDS("results/models/sensitivity/fit_m3_clmm_sensitivity_all_raters.rds")
 fit_m4_sensitivity_all_raters <- readRDS("results/models/sensitivity/fit_m4_clmm_sensitivity_all_raters.rds")
 
-fit_m3_ysr_12 = readRDS("results/models/sensitivity/fit_ysr_12_m3_clmm_sensitivity.rds") # with the ysr at age 12 included
-fit_m4_ysr_12 = readRDS("results/models/sensitivity/fit_ysr_12_m4_clmm_sensitivity.rds") 
+fit_ysr_12 = readRDS("results/models/sensitivity/fit_ysr_12_clmm_sensitivity.rds") # with the ysr at age 12 included
 
 # --- create plots ---
 
@@ -357,24 +355,20 @@ p_m4_three_way_high_only_sensitivity <- plot_three_way_high_only(df_m4_sensitivi
 p_m4_forest_sensitivity <- plot_forest_odds_ratios(fit_m4_sensitivity, "Model 4")
 
 # sensitivity analyses all raters present
-res_m3_sensitivity_all_raters <- get_rater_sex_emmeans(fit_m3_sensitivity_all_raters, outcome_var = "autism_score_ordinal_sensitivity")
-df_m4_sensitivity_all_raters <- get_three_way_emmeans(fit_m4_sensitivity_all_raters, outcome_var = "autism_score_ordinal_sensitivity")
+res_m3_sensitivity_all_raters <- get_rater_sex_emmeans(fit_m3_sensitivity_all_raters, outcome_var = "autism_score_ordinal")
+df_m4_sensitivity_all_raters <- get_three_way_emmeans(fit_m4_sensitivity_all_raters, outcome_var = "autism_score_ordinal")
 
-p_m3_prob_sensitivity_all_raters <- plot_pred_prob_rater_sex(res_m3_sensitivity_all_raters$probs, "Model 3", outcome_var = "autism_score_ordinal_sensitivity")
-p_m3_contr_sensitivity_all_raters <- plot_pairwise_contrasts_rater_sex(res_m3_sensitivity_all_raters$contrasts, "Model 3", outcome_var = "autism_score_ordinal_sensitivity")
-p_m4_three_way_sensitivity_all_raters <- plot_three_way(df_m4_sensitivity_all_raters, "Model 4", outcome_var = "autism_score_ordinal_sensitivity")
-p_m4_three_way_high_only_sensitivity_all_raters <- plot_three_way_high_only(df_m4_sensitivity_all_raters, "Model 4", outcome_var = "autism_score_ordinal_sensitivity")
+p_m3_prob_sensitivity_all_raters <- plot_pred_prob_rater_sex(res_m3_sensitivity_all_raters$probs, "Model 3", outcome_var = "autism_score_ordinal")
+p_m3_contr_sensitivity_all_raters <- plot_pairwise_contrasts_rater_sex(res_m3_sensitivity_all_raters$contrasts, "Model 3", outcome_var = "autism_score_ordinal")
+p_m4_three_way_sensitivity_all_raters <- plot_three_way(df_m4_sensitivity_all_raters, "Model 4", outcome_var = "autism_score_ordinal")
+p_m4_three_way_high_only_sensitivity_all_raters <- plot_three_way_high_only(df_m4_sensitivity_all_raters, "Model 4", outcome_var = "autism_score_ordinal")
 p_m4_forest_sensitivity_all_raters <- plot_forest_odds_ratios(fit_m4_sensitivity_all_raters, "Model 4")
 
 
-res_m3_ysr12 <- get_rater_sex_emmeans(fit_m3_ysr_12, outcome_var = "autism_score_ordinal") 
-df_m4_ysr12 <- get_three_way_emmeans(fit_m4_ysr_12, outcome_var = "autism_score_ordinal") 
+# res_m3_ysr12 <- get_rater_sex_emmeans(fit_ysr_12, outcome_var = "autism_score_ordinal") 
 
-p_m3_prob_ysr12 <- plot_pred_prob_rater_sex(res_m3_ysr12$probs, "Model 3", outcome_var = "autism_score_ordinal")
-p_m3_contr_ysr12 <- plot_pairwise_contrasts_rater_sex(res_m3_ysr12$contrasts, "Model 3", outcome_var = "autism_score_ordinal")
-p_m4_three_way_ysr12 <- plot_three_way(df_m4_ysr12, "Model 4", outcome_var = "autism_score_ordinal")
-p_m4_three_way_high_only_ysr12 <- plot_three_way_high_only(df_m4_ysr12, "Model 4", outcome_var = "autism_score_ordinal")
-
+# p_m3_prob_ysr12 <- plot_pred_prob_rater_sex(res_m3_ysr12$probs, "Model 3", outcome_var = "autism_score_ordinal")
+# p_m3_contr_ysr12 <- plot_pairwise_contrasts_rater_sex(res_m3_ysr12$contrasts, "Model 3", outcome_var = "autism_score_ordinal")
 
 # save plots
 
@@ -382,23 +376,44 @@ dir.create("results/figures", showWarnings = FALSE)
 dir.create("results/figures/sensitivity", showWarnings = FALSE)
 dir.create("results/figures/sensitivity_all_raters", showWarnings = FALSE)
 
-# TODO: save all relevant figures
-save_plots <- function(plot, filename) {
-  ggsave(
-    filename,
-    plot,
+
+ggsave(
+    "results/figures/pgs_sex_rater.png",
+    p_m4_three_way,
     device = "png",
     width = 8.4, height = 11, units = "cm",
-    dpi = 600, scale = 1.4
+    dpi = 300, scale = 1.4
   )
-}
 
-# save_plots(p_m3_prob_sensitivity_all_raters, "results/figures/sensitivity_all_raters/pred_prob.png")
+ggsave(
+    "results/figures/pgs_sex_rater_high_only.png",
+    p_m4_three_way_high_only,
+    device = "png",
+    width = 8.4, height = 11, units = "cm",
+    dpi = 300, scale = 1.4
+  )
 
+ggsave(
+    "results/figures/rater_sex.png",
+    p_m3_prob,
+    device = "png",
+    width = 13, height = 9, units = "cm",
+    dpi = 300, scale = 1
+  )
 
-# save_plots(p_m3_prob, "results/figures/test_plot.png")
+ggsave(
+    "results/figures/sensitivity_all_raters/pred_prob.png",
+    p_m3_prob_sensitivity_all_raters,
+    device = "png",
+    width = 13, height = 9, units = "cm",
+    dpi = 300, scale = 1
+  )
 
-save_plots(p_m4_three_way, "results/figures/pgs_sex_rater.png")
-save_plots(p_m4_three_way_high_only, "results/figures/pgs_sex_rater_high_only.png")
-
+ggsave(
+    "results/figures/rater_sex_m5.png",
+    p_m5_prob,
+    device = "png",
+    width = 13, height = 9  , units = "cm",
+    dpi = 300, scale = 1
+  )
 

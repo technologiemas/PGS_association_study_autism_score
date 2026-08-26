@@ -79,7 +79,7 @@ data_self_12$sex <- factor(data_self_12$sex, levels = c(1, 2), labels = c("Male"
 # --- SCALING PGS AND PCs ---
 # Rename PGS and PCs
 data_self_12 = data_self_12 %>%
-  rename(PGS = P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1) %>%
+  rename(PGS = SBayesRC_SCORE_AutismSpectrumDisorder_MRG18_SBRC) %>%
   rename_with(~ gsub("_1KG", "", .), starts_with("PC")) # Quick rename for PCs
 
 
@@ -148,8 +148,18 @@ data_self_12 = data_self_12 %>%
 data_self_12 <- data_self_12 %>%
   mutate(sex_effect = sex)
 
-contrasts(data_self_12$sex_effect) <- c(-0.5, 0.5)
-contrasts(data_self_12$PLATFORM) <- "contr.sum"
+# effect (sum-to-zero) coding, but with the contrast columns named after the level
+# they represent, so coefficients print as rater_Mother instead of rater1. The last
+# level is not given a column; its effect is minus the sum of the others.
+named_contr_sum <- function(f) {
+  cm <- contr.sum(levels(f))
+  colnames(cm) <- paste0("_", head(levels(f), -1))
+  cm
+}
+
+contrasts(data_self_12$sex_effect) <- matrix(c(-0.5, 0.5), ncol = 1,
+                                            dimnames = list(NULL, "_Female_vs_Male"))
+contrasts(data_self_12$PLATFORM) <- named_contr_sum(data_self_12$PLATFORM)
 
 data_self_12 = data_self_12 %>%
   mutate(age_centered = scale(age, center = TRUE, scale = FALSE),
@@ -164,3 +174,7 @@ class(data_self_12$autism_score_ordinal)
 saveRDS(data_self_12, "data/processed/02_full_dataset_long_self_age_12.rds")
 
 
+male = data_self_12 %>% filter(sex == "Male")
+female = data_self_12 %>% filter(sex == "Female")
+nrow(male)
+nrow(female)

@@ -80,3 +80,14 @@ contrast(
 
 fit_ysr_12 = readRDS("results/models/sensitivity/fit_ysr_12_clmm_sensitivity.rds")
 contrast(emmeans(fit_ysr_12, ~ sex_effect, mode = "latent"), method = "pairwise", adjust = "none") %>% calc_fdr_p() %>% rename_columns()
+# not significant
+
+
+refit_sex_rater_formula = "autism_score_ordinal ~ (1 | FamilyNumber / FISNumber) + sex_effect * rater + (sex_effect + rater) * (age_centered + date_of_assessment_centered)"
+refit_sex_rater = clmm(as.formula(refit_sex_rater_formula),
+            data = data_long,
+            link = "logit",
+            threshold = "flexible")
+saveRDS(refit_sex_rater, "results/models/fit_sex_rater_clmm_refit.rds")
+
+emmeans(refit_sex_rater, ~ sex_effect * rater, mode = "latent") %>% contrast(by = "rater", method = "pairwise", adjust = "none") %>% calc_fdr_p() %>% rename_columns()

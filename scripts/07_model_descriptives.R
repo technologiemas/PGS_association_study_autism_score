@@ -42,14 +42,14 @@ by(mf_3$autism_score_ordinal, list(mf_3$rater, mf_3$sex), summary)
 get_score_distribution <- function(model_frame) {
   # score distribution by sex and rater type (as a tidy table)
   distribution_scores_long <- as.data.frame(
-    with(model_frame, table(rater, sex, autism_score_ordinal)),
+    with(model_frame, table(rater, sex_effect, autism_score_ordinal)),
     responseName = "n"
   )
 
   # optional: wide format (one row per rater + sex, columns: no/low/high)
   distribution_scores_df <- reshape(
     distribution_scores_long,
-    idvar = c("rater", "sex"),
+    idvar = c("rater", "sex_effect"),
     timevar = "autism_score_ordinal",
     direction = "wide"
   )
@@ -78,18 +78,26 @@ distribution_scores_m3 <- get_score_distribution(mf_3)
 distribution_scores_m4 <- get_score_distribution(mf_4)
 distribution_scores_m5 <- get_score_distribution(mf_5)
 
+model_results_m1 <- list_model_results(fit_m1)
 model_results_m2 <- list_model_results(fit_m2)
 model_results_m3 <- list_model_results(fit_m3)
 model_results_m4 <- list_model_results(fit_m4)
 model_results_m5 <- list_model_results(fit_m5)
 
+library(tibble)
+model_anova_m3 <- as.data.frame(Anova(fit_m3, type = "III")) %>% rownames_to_column(var = "term")
+model_anova_m4 <- as.data.frame(Anova(fit_m4, type = "III")) %>% rownames_to_column(var = "term") 
+
 # TODO do we want to include model outputs?
 lst_results <- list(
+  "Model 1 output" = model_results_m1,
+  "Model 2 output" = model_results_m2,
   "Model 3 output" = model_results_m3,
+  "Model 3 ANOVAs" = model_anova_m3,
   "Model 4 output" = model_results_m4,
-  "Model 4 ANOVAs" = Anova(fit_m4, type = "III"),
+  "Model 4 ANOVAs" = model_anova_m4,
   "Model 5 output" = model_results_m5,
-  "Autism scores levels distribution" = distribution_scores_m3
+  "Autism scores levels" = distribution_scores_m3
 )
 
 openxlsx::write.xlsx(lst_results, "results/model_output.xlsx") 

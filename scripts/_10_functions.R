@@ -56,3 +56,16 @@ rename_columns <- function(emm_obj) {
 
   return(out)
 }
+
+# The following code was AI generated - it seems to work perfectly fine
+# emmeans takes the names of the ordinal outcome levels from dimnames(tJac), which clmm
+# objects do not store, so mode = "prob" falls back to numbering them 1, 2, 3. Restoring the
+# threshold names ("no|low", "low|high") makes the levels print as no / low / high instead.
+restore_ylevel_names <- function(fit_model) {
+  if (is.null(dimnames(fit_model$tJac)[[1]]) &&
+      length(fit_model$alpha) == nrow(fit_model$tJac)) {
+    dimnames(fit_model$tJac) <- list(names(fit_model$alpha), NULL)
+  }
+
+  fit_model
+}

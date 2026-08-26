@@ -17,9 +17,12 @@ data_unique <- data_long %>%
     distinct(FISNumber, .keep_all = TRUE)
 
 # --- MODELLING ---
-formula <- as.formula("PGS_scaled ~ sex + (1 | FamilyNumber)")
+formula <- as.formula("PGS_scaled ~ sex_effect + (1 | FamilyNumber)")
+formula_unscaled <- as.formula("PGS ~ sex_effect + (1 | FamilyNumber)")
 
 model_sex_pgs = lmer(formula, data = data_unique)
+model_sex_pgs_unscaled = lmer(formula_unscaled, data = data_unique)
 
 summary(model_sex_pgs)
+summary(model_sex_pgs_unscaled)
 

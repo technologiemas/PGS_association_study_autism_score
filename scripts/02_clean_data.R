@@ -99,7 +99,7 @@ data <- data %>%
 # --- SCALING PGS AND PCs ---
 # Rename PGS and PCs
 data = data %>%
-  rename(PGS = P_0_1_SCORE_AutismSpectrumDisorder_MRG18_LDp1) %>%
+  rename(PGS = SBayesRC_SCORE_AutismSpectrumDisorder_MRG18_SBRC) %>%
   rename_with(~ gsub("_1KG", "", .), starts_with("PC")) # Quick rename for PCs
 
 # check data types
@@ -207,9 +207,20 @@ data_long$rater <- factor(data_long$rater, levels = c("m12", "v12", "t12", "ysr1
 data_long <- data_long %>%
   mutate(sex_effect = sex)
 
-contrasts(data_long$sex_effect) <- c(-0.5, 0.5)
-contrasts(data_long$PLATFORM) <- "contr.sum"
-contrasts(data_long$rater) <- "contr.sum"
+# effect (sum-to-zero) coding, but with the contrast columns named after the level
+# they represent, so coefficients print as rater_Mother instead of rater1. The last
+# level is not given a column; its effect is minus the sum of the others.
+named_contr_sum <- function(f) {
+  # this function was AI generated as it used to strip the name of the rater and sex and revert to "rater1", "rater2" etc.
+  cm <- contr.sum(levels(f))
+  colnames(cm) <- paste0("_", head(levels(f), -1))
+  cm
+}
+
+contrasts(data_long$sex_effect) <- matrix(c(-0.5, 0.5), ncol = 1,
+                                         dimnames = list(NULL, "_Female_vs_Male"))
+contrasts(data_long$PLATFORM) <- named_contr_sum(data_long$PLATFORM)
+contrasts(data_long$rater) <- named_contr_sum(data_long$rater)
 
 
 # We want to scale PGS and PCs across participants but not across long data as then there are repeated identical values

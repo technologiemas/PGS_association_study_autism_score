@@ -12,14 +12,11 @@ source("scripts/_column_names.R")
 # loading in data
 # phenotype_file_path = "./data/raw/PHE_20250516_5023_YJS.sav" # old file
 phenotype_file_path = "./data/raw/amendment_data/PHE_20260401_5103_YJS.sav" # amendment file
-genotype_file_path = "./data/raw/NTR-DSR-5023_AutismSpectrumDisorder_PMID30804558_MRG18_PedMergedWithScores.sav"
-genotype_file_path_amendment = "./data/raw/amendment_data/NTR-DSR-5103_AutismSpectrumDisorder_PMID30804558_MRG18_PedMergedWithScores.sav"
+# genotype_file_path = "./data/raw/NTR-DSR-5023_AutismSpectrumDisorder_PMID30804558_MRG18_PedMergedWithScores.sav" # <- old sumscores
+genotype_file_path = "./data/raw/AutismSpectrumDisorder_Grove_NoJournal2026_TMPID1234_MRG18_PedMergedWithScores.sav"
 
 phenotype_data = read_sav(phenotype_file_path)
 genotype_data = read_sav(genotype_file_path)
-genotype_data_amendment = read_sav(genotype_file_path_amendment)
-
-genotype_data = genotype_data %>% bind_rows(genotype_data_amendment) # add the amendment data to the original data
 
 # view labels of the columns in the data
 lapply(phenotype_data, function(x) attr(x, "label")) # explanation of spss labels of variables
@@ -39,7 +36,6 @@ data = phenotype_data %>%
 
 # select the columns of interest from the genotype data
 genotype_data = genotype_data %>% select(all_of(geno_cols_general))
-genotype_data = unique(genotype_data) # rows were duplicated because of amendment file
 
 # join the two data sets where data is present for both tables for each FISNumber 
 data = data %>% inner_join(genotype_data, by = "FISNumber")
@@ -140,4 +136,5 @@ data = data %>%
 
 saveRDS(data, "data/processed/01_full_dataset.rds")
 saveRDS(data_self_12, "data/processed/01_full_dataset_self_12.rds")
+
 

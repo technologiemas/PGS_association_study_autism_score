@@ -68,22 +68,7 @@ openxlsx::write.xlsx(correlations_predictors, "results/correlations_predictors_m
 
 
 
-# ---DROP-ONE MAIN AND TWO-WAY INTERACTIONS INDIVIDUAL EFFECT MODELS ---
-# TODO: delete
-# library(ordinal)
 
-# # Warning takes very long to run.
-# drop1_effects_m3 = drop1(fit_m3, test = "Chisq")
-# drop1_effects_m4 = drop1(fit_m4, test = "Chisq") 
-
-# saveRDS(drop1_effects_m3, "results/models/drop1_effects_m3.rds")
-# saveRDS(drop1_effects_m4, "results/models/drop1_effects_m4.rds")
-
-readRDS("results/models/drop1_effects_m1.rds")
-readRDS("results/models/drop1_effects_m2.rds")
-readRDS("results/models/drop1_effects_m3.rds")
-readRDS("results/models/drop1_effects_m4.rds")
-readRDS("results/models/drop1_effects_m5.rds")
 
 # TODO: delete?? Or do I want the r2 for PGS after all
 fit_pgs <- clmm(as.formula(paste("autism_score_ordinal ~ ", m1_formula, "+ PGS_scaled")),

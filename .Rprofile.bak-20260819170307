@@ -1,0 +1,12 @@
+source("renv/activate.R")
+
+# jsonlite #424: haven_labelled columns make vscode-R's View() blow the C stack
+if (interactive() && Sys.getenv("TERM_PROGRAM") == "vscode") {
+  assign("View", function(x, title = deparse(substitute(x))) {
+    if (is.data.frame(x)) {
+      x[] <- lapply(x, function(col)
+        if (inherits(col, "haven_labelled")) haven::zap_labels(col) else col)
+    }
+    utils::View(x, title)
+  }, envir = globalenv())
+}

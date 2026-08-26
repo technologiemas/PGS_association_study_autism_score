@@ -60,3 +60,4 @@ per_subgroup_results = per_subgroup_results %>%
 
 per_subgroup_results
 
+pwr.f2.test(u = 1, f2 = effect_size, sig.level= 0.05, power=0.8) # this is for the systematic review

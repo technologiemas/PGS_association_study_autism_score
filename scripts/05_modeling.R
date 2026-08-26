@@ -43,8 +43,9 @@ m4_formula = paste(m3_formula, "+ PGS_scaled * sex_effect * rater")
 # Model 5, includes Keller adjustment for three- and two-way interactions between covariates and GxExE (PGSxRaterxSex)
 m5_formula = paste(m4_formula, "+", covariates, "* (PGS_scaled * sex_effect + PGS_scaled * rater + sex_effect * rater)")
 
-# checking if the formulas expand correctly
-form <- as.formula(paste("autism_score_ordinal ~", m5_formula))
+# checking if the fixed effects expand correctly
+fixed_only = gsub("\\(1 \\| [^)]+\\)\\s*\\+\\s*", "", m5_formula)
+form <- as.formula(paste("autism_score_ordinal ~", fixed_only))
 terms(form)
 X = model.matrix(form, data = data_long)
 colnames(X) # all terms seem to be there!
@@ -59,7 +60,6 @@ run_ordinal_clmm = function (formula_str, data) {
               threshold = "flexible")
   return(fit)
 }
-
 
 # --- RUNNING THE HIERARCHICAL MODELS ---
 
@@ -103,7 +103,6 @@ fit_sub_m3 <- run_ordinal_clmm(m3_main, data_long_all_raters_present)
 fit_sub_m4 <- run_ordinal_clmm(m4_main, data_long_all_raters_present)
 
 # 2C. Sensitivity - YSR12 Subset (Self Rater, Age 12)
-# m3_ysr_12 = "autism_score_ordinal ~ (1 | FamilyNumber) + PLATFORM + age_centered + date_of_assessment_centered + PC1_scaled + PC2_scaled + PC3_scaled + PC4_scaled + PC5_scaled + PC6_scaled + PC7_scaled + PC8_scaled + PC9_scaled + PC10_scaled + PGS_scaled * sex_effect"
 m3_ysr_12 = "autism_score_ordinal ~ (1 | FamilyNumber) + age_centered + date_of_assessment_centered + sex_effect"
 fit_ysr_12 <- run_ordinal_clmm(m3_ysr_12, data_long_ysr12)
 

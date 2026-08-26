@@ -14,7 +14,7 @@ data_long_ysr12 = readRDS("data/processed/02_full_dataset_long_self_age_12.rds")
 data_combined = bind_rows(data_long, data_long_ysr12)
 
 # colors to use for the sexes
-colors = c("Male" = "#00C07B", "Female" = "#FFBB09")
+colors <- c("Male" = "#0f7674", "Female" = "#D97706") # set colors for the plots
 
 # --- PLOTTING FIGURES ---
    
