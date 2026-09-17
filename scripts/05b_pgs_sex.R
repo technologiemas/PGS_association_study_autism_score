@@ -10,19 +10,21 @@ library(lmerTest)
 # --- LOAD DATA ---
 data_long = readRDS("data/processed/02_full_dataset_long.rds")
 
-
 # --- PRE-PROCESSING & FORMATTING ---
 # filter on unique individuals otherwise there are duplicate rows as one individual has multiple raters:
 data_unique <- data_long %>%
     distinct(FISNumber, .keep_all = TRUE)
 
+# drop to one per family as PGS and sex being identical for twins, and we want to avoid pseudoreplication in the model
+data_unique <- data_unique %>%
+    distinct(FamilyNumber, .keep_all = TRUE)
+
 # --- MODELLING ---
-formula <- as.formula("PGS_scaled ~ sex_effect + (1 | FamilyNumber)")
-formula_unscaled <- as.formula("PGS ~ sex_effect + (1 | FamilyNumber)")
+formula <- as.formula("PGS_scaled ~ sex_effect")
 
-model_sex_pgs = lmer(formula, data = data_unique)
-model_sex_pgs_unscaled = lmer(formula_unscaled, data = data_unique)
+Yes kee = lm(formula, data = data_unique)
 
-summary(model_sex_pgs)
-summary(model_sex_pgs_unscaled)
+p_value <- summary(model_fit)$coefficients[2, 4]
+# the sexes don't differ significantly in their PGS
+
 

@@ -37,6 +37,8 @@ table(data$agetrf12) # very low values. Younger siblings? Weird.
 
 # --- cleaning the data ---
 
+na_ages = sapply(data[c("ages14", "agem12", "agev12", "agetrf12")], function(x) sum(is.na(x)))
+
 # put age to NA for people with age outside IQR for each rater type.
 # For mother, father and teacher, we will only put to NA the values that are more than 2 standard deviations below the mean, as these are likely to be younger siblings. For self-report, we will only put to NA the values that are more than 2 standard deviations above the mean, as these are likely to be older siblings. This makes the age ranges more equal.
 data <- data %>%
@@ -68,6 +70,9 @@ data <- data %>%
       }
     )
   )
+
+# count the number of NA values for each age variable to see how many were removed
+na_ages = na_ages - sapply(data[c("ages14", "agem12", "agev12", "agetrf12")], function(x) sum(is.na(x)))
 
 # check boxplots again to see if outliers are removed. Looks good
 boxplot(data$ages14, main = "Self", ylab = "Age") # very high values now gone
@@ -247,7 +252,6 @@ data_long = data_long %>%
   mutate(age_centered = scale(age, center = TRUE, scale = FALSE),
          date_of_assessment_centered = scale(date_of_assessment, center = TRUE, scale = FALSE))
 
-
 # Check data types
 sapply(data_long, class)
 class(data_long$autism_score_ordinal) 
@@ -257,7 +261,3 @@ class(data_long$autism_score_ordinal)
 saveRDS(data, "data/processed/02_full_dataset_clean.rds")
 saveRDS(data_long, "data/processed/02_full_dataset_long.rds")
 saveRDS(data_all_items, "data/processed/02_data_all_items.rds")
-
-
-class(data$FISNumber)
-data[data$FISNumber == "514335102281", ]

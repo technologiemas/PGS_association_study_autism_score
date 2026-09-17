@@ -120,3 +120,20 @@ saveRDS(fit_sub_m4, "results/models/sensitivity/fit_m4_clmm_sensitivity_all_rate
 saveRDS(fit_ysr_12, "results/models/sensitivity/fit_ysr_12_clmm_sensitivity.rds")
 
 
+# --- LINEAR (GAUSSIAN) COUNTERPART OF M4 ---------------------------------------
+# The ordinal CLMM above is the analysis; this is the same M4 fixed and random
+# effects fitted with lmer on the raw sum score. It is kept because a slope in
+# score points per SD of PGS is easier to read than a latent-scale one, and it
+# gives a plottable version of the three-way interaction on the response scale.
+# Fitted, saved here, and visualised in 08c_visualization_linear.R.
+
+library(lme4)
+library(lmerTest)
+
+outcome_linear = "autism_score"
+m4_linear = paste(outcome_linear, "~", m4_formula)
+
+fit_m4_lmer = lmer(as.formula(m4_linear), data = data_long)
+summary(fit_m4_lmer)
+
+saveRDS(fit_m4_lmer, "results/models/fit_m4_lmer.rds")

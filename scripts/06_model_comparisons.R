@@ -66,21 +66,3 @@ correlations_predictors = cov2cor(vcov(fit_m3)) # no very high correlations
 library(openxlsx)
 openxlsx::write.xlsx(correlations_predictors, "results/correlations_predictors_m3.xlsx")
 
-
-
-
-
-# TODO: delete?? Or do I want the r2 for PGS after all
-fit_pgs <- clmm(as.formula(paste("autism_score_ordinal ~ ", m1_formula, "+ PGS_scaled")),
-              data = data_long,
-              link = "logit",
-              threshold = "flexible")
-
-# calculating nagelkerke's r2 for the PGS model vs the base model (only covariates/random effects)
-ll_full = logLik(fit_pgs) # the base + pgs model. as.numeric() needed?
-ll_null = logLik(fit_m1) # the base model
-n = nobs(fit_pgs)
-r2_2 = (1 - exp((2/n) * ((ll_null) - (ll_full)))) / (1 - exp((2/n) * (ll_null)))
-r2_2
-
-anova(fit_m1, fit_pgs)
