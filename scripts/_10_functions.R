@@ -102,7 +102,7 @@ restore_ylevel_names <- function(fit_model) {
 #
 # The Male/Female assignment is arbitrary - swap the two hex values to reverse it.
 #
-# LEVELS. Autism score level is ORDERED (No < Low < High), so it gets a single-hue
+# LEVELS. Autistic trait score level is ORDERED (No < Low < High), so it gets a single-hue
 # sequential ramp light -> dark. A luminance ramp survives greyscale by construction.
 
 sex_colours   <- c(Male = "#0f7674", Female = "#D97706")

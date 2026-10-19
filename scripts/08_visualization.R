@@ -128,7 +128,7 @@ plot_pred_prob_rater_sex <- function(probs_df, outcome_var, contr_df = NULL) {
                        expand = expansion(mult = c(0.05, 0.18))) +
     labs(
       y = "Predicted probability (95% CI)",
-      x = "Autism score level"
+      x = "Autistic trait score level"
     ) +
     theme_pgs()
 }
@@ -155,7 +155,7 @@ plot_pairwise_contrasts_rater_sex <- function(contr_df, outcome_var) {
       height = 0.2
     ) +
     scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
-      scale_color_manual(values = level_colours, name = "Autism score level") +
+      scale_color_manual(values = level_colours, name = "Autistic trait score level") +
     labs(
       x = "Difference in predicted probability, male − female (95% CI)",
       y = "Rater"
@@ -210,7 +210,7 @@ plot_three_way <- function(df, outcome_var) {
     ) +
     geom_line(linewidth = fig_linewidth) +
     facet_wrap(~ rater, ncol = 2) +
-    scale_color_manual(values = level_colours, name = "Autism score level") +
+    scale_color_manual(values = level_colours, name = "Autistic trait score level") +
     scale_fill_manual(values = level_colours, guide = "none") +
     scale_linetype_manual(values = sex_linetypes, name = "Sex") +
     scale_y_continuous(labels = scales::percent) +
@@ -328,7 +328,7 @@ plot_barplot_predicted_probabilities <- function(model_fit = fit_m3, outcome_var
     # Separate by rater type for side-by-side comparison
     facet_wrap(~ rater, nrow = 1) + 
     # Formatting and Colors
-    scale_fill_manual(values = level_colours, name = "Autism score level") +
+    scale_fill_manual(values = level_colours, name = "Autistic trait score level") +
     scale_y_continuous(labels = percent_format()) +
     labs(
       x = "Sex",

@@ -1,4 +1,4 @@
-# This script does power calculations for the main effect of PGS on autism score ordinal
+# This script does power calculations for the main effect of PGS on autistic trait score ordinal
 # It calculates the effective sample size accounting for clustering within families and participants by using
 # adapted from script at our department
 

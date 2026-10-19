@@ -1,4 +1,4 @@
-# This script shows on simulated data why the autism score is modelled as ordinal rather
+# This script shows on simulated data why the autistic trait score is modelled as ordinal rather
 # than as continuous: with a skewed, zero-inflated outcome the residuals of the linear
 # mixed model are clearly not normally distributed.
 #

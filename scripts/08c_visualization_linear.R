@@ -78,7 +78,7 @@ p_linear = ggplot(linear_df, aes(PGS_scaled, emmean, colour = sex_effect, fill =
   # clip = "off" lets the end-of-line stars sit in the gutter between panels
   # instead of being clipped; panel.spacing gives them that gutter
   coord_cartesian(clip = "off") +
-  labs(x = "Autism PGS (SD)", y = "Predicted autism score\n(sum score)") +
+  labs(x = "Autism PGS (SD)", y = "Predicted autistic trait score\n(sum score)") +
   theme_pgs() +
   theme(panel.spacing.x = unit(16, "pt"),
         plot.margin = margin(5.5, 16, 5.5, 5.5, "pt"))

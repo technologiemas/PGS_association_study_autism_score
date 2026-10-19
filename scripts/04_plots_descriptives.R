@@ -44,12 +44,12 @@ ggplot(data_long, aes(x = rater, y = autism_score, fill = sex)) +
                position = position_dodge(0.8),
                width = 0.75, size = 1, linetype = "solid") +
   theme(text = element_text(size = 20)) +   # larger font size
-  labs(title = "Autism score by rater type and sex",
+  labs(title = "Autistic trait score by rater type and sex",
        x = "Rater type",
-       y = "Autism score")
+       y = "Autistic trait score")
 
 
-# Figure histogram of autism scores by rater type
+# Figure histogram of autistic trait scores by rater type
 # change order of sexes
 data_long <- data_long %>%
   mutate(
@@ -94,7 +94,7 @@ ggplot(data_long, aes(x = autism_score, fill = sex)) +
     breaks = function(x) seq(0, ceiling(max(x)), by = 200)) +
   coord_cartesian(ylim = c(-150, NA), clip = "off") +
   labs(
-    x = "Autism score (continuous)",
+    x = "Autistic trait score (continuous)",
     y = "Count",
     fill = "Sex"
   ) +
@@ -176,7 +176,7 @@ date_12_plot = histogram_plots(data_combined, `date_of_assessment`, bins = 1,
 age_12_plot  = histogram_plots(data_combined, `age`,                bins = 0.1,
                                x_lab = "Age (years)")
 
-# one column each, same portrait shape as the autism score histogram
+# one column each, same portrait shape as the autistic trait score histogram
 save_1col = function (plot, file) ggsave(plot = plot, file,
   width = fig_width_1col, height = 4.6, dpi = fig_dpi, bg = "white")
 

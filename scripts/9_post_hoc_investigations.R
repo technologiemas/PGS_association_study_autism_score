@@ -36,10 +36,10 @@ get_emm_rater_sex <- function(fit_model, at = list(PGS_scaled = 0)) {
   ) # results are averaged over levels of categorical variables (such as PLATFORM) and at the mean of numeric variables (such as PGS = 0)
 }
 
-# estimated probabilities for individual autism score levels within each rater type and sex
+# estimated probabilities for individual autistic trait score levels within each rater type and sex
 get_eprob_rater_sex <- function(fit_model, outcome_var) {
   formula_str <- paste("~ sex_effect *", outcome_var, "| rater")
-  emmeans(fit_model, as.formula(formula_str), # "within each rater what is the prob for the autism score levels?"
+  emmeans(fit_model, as.formula(formula_str), # "within each rater what is the prob for the autistic trait score levels?"
     mode = "prob",
     cov.reduce = mean # this averages over PGS and other covariates
   )
@@ -47,7 +47,7 @@ get_eprob_rater_sex <- function(fit_model, outcome_var) {
 
 # --- Three way interaction effect post hoc investigation ---
 
-# three way PGS * sex * rater: slopes of PGS predicting autism score ordinal within each rater type and sex
+# three way PGS * sex * rater: slopes of PGS predicting autistic trait score ordinal within each rater type and sex
 get_slopes_three_way <- function(fit_model) {
   emtrends(
     fit_model,
@@ -87,7 +87,7 @@ lst_results <- function(two_way_model, three_way_model, outcome_var) {
         adjust = "none"
       ) %>% calc_fdr_p() %>% rename_columns(),
 
-    # cumulative probabilities for each autism score level (no, low, high) within each rater type and sex
+    # cumulative probabilities for each autistic trait score level (no, low, high) within each rater type and sex
     `M3 probs` =
       summary(get_eprob_rater_sex(two_way_model, outcome_var), infer = c(TRUE, TRUE)) %>% calc_fdr_p() %>% rename_columns(),
 
@@ -108,11 +108,11 @@ lst_results <- function(two_way_model, three_way_model, outcome_var) {
         adjust = "none"
       ) %>% calc_fdr_p() %>% rename_prob_columns(),
 
-    # pgs association with latent autism score ordinal within each rater type and sex
+    # pgs association with latent autistic trait score ordinal within each rater type and sex
     `M4 PGS emtrends` =
       summary(get_slopes_three_way(three_way_model), infer = c(TRUE, TRUE)) %>% calc_fdr_p() %>% rename_columns(),
 
-    # pairwise contrast between sexes of pgs association with probability of autism score ordinal within each rater type
+    # pairwise contrast between sexes of pgs association with probability of autistic trait score ordinal within each rater type
     `M4 PGS sexes` =
       contrast(
         get_slopes_three_way(three_way_model),
@@ -121,7 +121,7 @@ lst_results <- function(two_way_model, three_way_model, outcome_var) {
         adjust = "none"
       ) %>% calc_fdr_p() %>% rename_columns(),
 
-    # pairwise contrast between rater types of pgs association with probability of autism score ordinal within
+    # pairwise contrast between rater types of pgs association with probability of autistic trait score ordinal within
     `M4 PGS raters` =
       contrast(
         get_slopes_three_way(three_way_model),

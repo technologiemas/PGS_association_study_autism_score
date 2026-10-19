@@ -58,7 +58,7 @@ data_self_12 <- data_self_12 %>%
   )
 
 # check boxplots again to see if outliers are removed. Looks good
-boxplot(data_self_12$ages12, main = "Self", ylab = "Autism score") # very high values. Older siblings are in the dataset
+boxplot(data_self_12$ages12, main = "Self", ylab = "Autistic trait score") # very high values. Older siblings are in the dataset
 
 # filtering participants
 data_self_12 = data_self_12 %>%
@@ -105,7 +105,7 @@ data_self_12 = data_self_12 %>%
 
 data_self_12 <- data_self_12 %>% select(-invjrm12, -invjrv12, -invjrt12, -invjrs14, -invjrs12, -invjrm12, -agem12, -agev12, -agetrf12, -ages14, -ages12, -m12_aut_sum, -v12_aut_sum, -t12_aut_sum, -ysr14_aut_sum, -m12_aut_sum_sensitivity, -v12_aut_sum_sensitivity, -t12_aut_sum_sensitivity, -ysr14_aut_sum_sensitivity) 
 
-# --- Some more filtering and creating the ordinal autism score variable ---
+# --- Some more filtering and creating the ordinal autistic trait score variable ---
 
 # filtering data_long to remove rows with NA values, cleans up the data and gives accurate sample sizes in descriptives.R
 nrow(data_self_12) 
@@ -124,7 +124,7 @@ data_self_12 = data_self_12 %>%
 nrow(data_self_12)
 
 
-# ordinalize autism score into three levels: 0, 1-3, 4+
+# ordinalize autistic trait score into three levels: 0, 1-3, 4+
 data_self_12 = data_self_12 %>%
   mutate(autism_score_ordinal = cut(autism_score,
                                  breaks = c(-Inf, 1, 4, Inf),

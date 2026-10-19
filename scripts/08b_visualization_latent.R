@@ -76,7 +76,7 @@ p_latent = ggplot(latent_df, aes(PGS_scaled, emmean, colour = sex_effect, fill =
   # clip = "off" lets the end-of-line stars sit in the gutter between panels
   # instead of being clipped; panel.spacing gives them that gutter
   coord_cartesian(clip = "off") +
-  labs(x = "Autism PGS (SD)", y = "Predicted autism score\n(latent scale)") +
+  labs(x = "Autism PGS (SD)", y = "Predicted autistic trait score\n(latent scale)") +
   theme_pgs() +
   theme(panel.spacing.x = unit(16, "pt"),
         plot.margin = margin(5.5, 16, 5.5, 5.5, "pt"))
@@ -128,7 +128,7 @@ p_m3_latent = ggplot(m3_df, aes(rater, emmean, colour = sex_effect)) +
   scale_shape_manual(values = sex_shapes, name = "Sex") +
   scale_y_continuous(expand = expansion(mult = c(0.05, 0.12))) +
   # No title or subtitle here either; the caption belongs in the manuscript.
-  labs(x = NULL, y = "Predicted autism score\n(latent scale)") +
+  labs(x = NULL, y = "Predicted autistic trait score\n(latent scale)") +
   theme_pgs() +
   theme(
     # the x positions are categories, not values, so vertical gridlines say nothing

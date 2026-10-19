@@ -38,7 +38,7 @@ psych::describeBy(mf_3,
 # score distribution by sex and rater type
 by(mf_3$autism_score_ordinal, list(mf_3$rater, mf_3$sex), summary)
 
-# function to get autism score level distribution
+# function to get autistic trait score level distribution
 get_score_distribution <- function(model_frame) {
   # score distribution by sex and rater type (as a tidy table)
   distribution_scores_long <- as.data.frame(
@@ -97,7 +97,7 @@ lst_results <- list(
   "Model 4 output" = model_results_m4,
   "Model 4 ANOVAs" = model_anova_m4,
   "Model 5 output" = model_results_m5,
-  "Autism scores levels" = distribution_scores_m3
+  "Autistic trait scores levels" = distribution_scores_m3
 )
 
 openxlsx::write.xlsx(lst_results, "results/model_output.xlsx") 

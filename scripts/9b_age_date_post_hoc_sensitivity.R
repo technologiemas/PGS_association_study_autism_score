@@ -1,7 +1,7 @@
 # as age and rater are entangled (self score has a higher mean age), 
 # sex and age:sex (for date same thing) become highly correlated, 
 # which is problematic for the model fitting. 
-# This leads to sex no longer being significantly predictive of autism score within the self reports
+# This leads to sex no longer being significantly predictive of autistic trait score within the self reports
 
 rm(list = ls(all = TRUE))
 gc()
@@ -31,7 +31,7 @@ fit_self_covariates = clmm(as.formula(formula_fit_self_covariates),
               data = data_self,
               link = "logit",
               threshold = "flexible")
-summary(fit_self_covariates) # now sex is significantly predicting autism score again within the self rater group
+summary(fit_self_covariates) # now sex is significantly predicting autistic trait score again within the self rater group
 
 saveRDS(fit_self_covariates, "results/models/fit_self_covariates_clmm.rds")
 fit_self_covariates = readRDS("results/models/fit_self_covariates_clmm.rds")

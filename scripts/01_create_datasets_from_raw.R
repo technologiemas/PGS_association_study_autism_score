@@ -94,7 +94,7 @@ data = data %>%
 
 # FUNCTION that sums the individual items into an autism scale
 create_autism_score = function(data, items, in_questionnaire, col_name) {
- # calculate autism scores according to the ten ASEBA items from So. et al., 2013
+ # calculate autistic trait scores according to the ten ASEBA items from So. et al., 2013
   threshold = 2 # maximum number of missing items allowed to still calculate the sum score
 
   # create a new column with col name that sums the autism scale items
@@ -112,7 +112,7 @@ create_autism_score = function(data, items, in_questionnaire, col_name) {
   return(data)
 }
 
-# sum the autism scores for each rater type
+# sum the autistic trait scores for each rater type
 data <- data %>%
   create_autism_score(items_m12, "in_YS_12M", "m12_aut_sum") %>%
   create_autism_score(items_v12, "in_YS_12V", "v12_aut_sum") %>%

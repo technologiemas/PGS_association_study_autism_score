@@ -67,7 +67,7 @@ calculate_descriptives_phenotype <- function(data_long, phenotype) {
       `age (sd)`         = sd(age, na.rm = TRUE),
       `date of assessment(mean)` = mean(date_of_assessment, na.rm = TRUE),
       `date of assessment (sd)`  = sd(date_of_assessment, na.rm = TRUE),
-      `autism score (mean)`      = mean({{phenotype}}, na.rm = TRUE),
+      `autistic trait score (mean)`      = mean({{phenotype}}, na.rm = TRUE),
       sd        = sd({{phenotype}},   na.rm = TRUE),
       .groups   = "drop"
     ) 

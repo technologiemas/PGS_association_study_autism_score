@@ -125,7 +125,7 @@ trend_plot = function (df, x_lab, x_breaks, sig) {
     # No title, subtitle or caption on the figure itself: that text belongs in the
     # manuscript's figure caption, where it is typeset and copy-edited with the rest
     # of the article. The strings live at the bottom of this script instead.
-    labs(x = x_lab, y = "Predicted autism score\n(latent scale)") +
+    labs(x = x_lab, y = "Predicted autistic trait score\n(latent scale)") +
     theme_pgs() +
     theme(panel.spacing.x = unit(16, "pt"),
           plot.margin = margin(5.5, 16, 5.5, 5.5, "pt"))
