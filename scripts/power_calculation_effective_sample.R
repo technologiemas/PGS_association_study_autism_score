@@ -1,6 +1,7 @@
 # This script does power calculations for the main effect of PGS on autistic trait score ordinal
 # It calculates the effective sample size accounting for clustering within families and participants by using
 # adapted from script at our department
+# It uses intraclass correlation coefficients (ICCs) to estimate the effective sample size for each subgroup of rater and sex
 
 rm(list = ls(all = TRUE))
 gc()
