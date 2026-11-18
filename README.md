@@ -1,5 +1,5 @@
 # The Interplay Between Sex, Rater, and Autism Polygenic Scores in Autistic Traits in General Population Adolescents
-## Thomas Sollie, Melanie M. de Wit, René Pool, the Autism Working Group of the Psychiatric Genomics Consortium, Meike Bartels, Tinca J.C. Polderman, and Wonuola A. Akingbuwa
+_Thomas Sollie, Melanie M. de Wit, René Pool, the Autism Working Group of the Psychiatric Genomics Consortium, Meike Bartels, Tinca J.C. Polderman, and Wonuola A. Akingbuwa_
 
 
 This study investigates sex differences in the association between an autism polygenic score and an autism subscale of the ASEBA questionnaires. These questionnaires were taken in a general population. Rater effects are investigated as the same questionnaire was taken via self-, parent- and teacher-reports (YSR, TRF and CBCL respectively).
